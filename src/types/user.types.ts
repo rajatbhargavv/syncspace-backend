@@ -3,4 +3,8 @@ interface IUser {
     email:string,
     password:string
 }
-export default IUser;
+interface ILogin{
+    email:string,
+    password:string
+}
+export {IUser,ILogin}

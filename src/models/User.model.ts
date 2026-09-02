@@ -1,5 +1,5 @@
 import {Schema,model} from "mongoose"
-import IUser from "../types/user.types";
+import {IUser} from "../types/user.types";
  const userSchema=new Schema<IUser>({
     name:{
         type:String,
@@ -16,5 +16,5 @@ import IUser from "../types/user.types";
         select:false
     }
  },{timestamps:true});
- const User=model("User",userSchema);
+ const User=model<IUser>("User",userSchema);
 export default User;

@@ -1,7 +1,10 @@
 import { NextFunction,Request,Response} from "express";
-import AppError from "../utils/AppError";
+import AppError from "../utils/AppError.js";
 
 export default function errorHandler(err:Error,req:Request,res:Response,next:NextFunction){
+    if (res.headersSent){
+    return next(err);
+    }
     let statusCode:number=500;
     if(err instanceof AppError){
     statusCode=err.statusCode||500;

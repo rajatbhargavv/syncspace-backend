@@ -12,7 +12,7 @@ const spaceSchema = Joi.object({
                     .trim()
                     .max(500)
                     .allow("")
-                    .optional()
+                    .optional(),
 })
 
 const updateSpaceSchema=Joi.object({
@@ -30,4 +30,4 @@ const updateSpaceSchema=Joi.object({
                     .optional()
 })
 
-export default {spaceSchema,updateSpaceSchema}
+export {spaceSchema,updateSpaceSchema}

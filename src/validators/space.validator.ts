@@ -1,12 +1,12 @@
 import Joi from "joi";
 
 const spaceSchema = Joi.object({
-    name:Joi
-            .string()
-            .trim()
-            .min(3)
-            .max(50)
-            .required(),
+    name:       Joi
+                    .string()
+                    .trim()
+                    .min(3)
+                    .max(50)
+                    .required(),
     description: Joi
                     .string()
                     .trim()

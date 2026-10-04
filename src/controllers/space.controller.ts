@@ -61,7 +61,7 @@ export async function handleGetSpaceByID(req: Request, res: Response, next: Next
 
 // 4. Update a space
 export async function handleUpdateSpace(req: Request, res: Response, next: NextFunction){
-    const userID = req.user?.id || req.body.ownerID;
+    const userID = req.user?.id ;
     const spaceID = req.params.id as string;
     if(!userID){
         throw new AppError("UserID is required", 400);
@@ -69,11 +69,16 @@ export async function handleUpdateSpace(req: Request, res: Response, next: NextF
     if(!spaceID){
         throw new AppError("SpaceID is required", 400);
     }
-    const updateData: IUpdateSpace = {
-        name: req.body.name,
-        description: req.body.description,
-        status: req.body.status
-    };
+    const updateData: IUpdateSpace = {};
+    if(req.body.name!==undefined){
+        updateData.name=req.body.name;
+    }
+    if(req.body.description!==undefined){
+        updateData.description=req.body.description;
+    }
+    if(req.body.status!==undefined){
+        updateData.status=req.body.status;
+    }
     const space = await updateSpace(userID, spaceID, updateData);
     if(!space){
         throw new AppError("Space not authorized or found", 400);

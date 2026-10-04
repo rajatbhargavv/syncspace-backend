@@ -1,16 +1,15 @@
-import { randomUUID } from "crypto";
 import { model,Schema } from "mongoose";
 
 import { ISpaceMember } from "../types/spaceMember.types.js";
 
 const spaceMemberSchema = new Schema<ISpaceMember>({
   spaceId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: "Space",
     required: true,
   },
   userId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: "User",
     required: true,
   },
@@ -24,5 +23,7 @@ const spaceMemberSchema = new Schema<ISpaceMember>({
     default: Date.now,
   },
 });
-
+spaceMemberSchema.index({
+  spacedId:1,userId:1
+},{unique:true})
 export const SpaceMember = model<ISpaceMember>("SpaceMember", spaceMemberSchema);

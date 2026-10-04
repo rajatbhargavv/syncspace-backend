@@ -2,8 +2,8 @@ import { Types } from "mongoose";
 
 interface ISpaceMember {
   _id: Types.ObjectId;
-  spaceId: Types.ObjectId;
-  userId: Types.ObjectId;
+  spaceId: String;
+  userId:String;
   status: "ACTIVE" | "INACTIVE";
   joinedAt: Date;
 }

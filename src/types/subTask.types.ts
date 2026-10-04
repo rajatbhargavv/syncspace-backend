@@ -1,13 +1,24 @@
 import { Types } from "mongoose";
 
-export interface ISubtask {
-  title: string;
-  completed: boolean;
+export type SubTaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type SubTaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
+export type SubTaskLifecycleStatus = "ACTIVE" | "DELETED";
 
+interface ISubtask {
   taskId: Types.ObjectId;
-  creatorId: Types.ObjectId;
-  assigneeId?: Types.ObjectId;
+
+  title: string;
+  description?: string;
+
+  assigneeId: Types.ObjectId;
+
+  priority: SubTaskPriority;
+  deadline: Date;
+
+  status: SubTaskStatus;
+  lifecycleStatus: SubTaskLifecycleStatus;
 
   createdAt: Date;
   updatedAt: Date;
 }
+export { ISubtask };

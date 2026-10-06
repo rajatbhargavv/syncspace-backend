@@ -1,18 +1,40 @@
-import { Document, Types } from "mongoose";
-export interface ITask extends Document {
+import { Types } from "mongoose";
+
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+export type TaskProgressStatus =
+  | "TODO"
+  | "IN_PROGRESS"
+  | "COMPLETED";
+
+export type TaskLifecycleStatus = "ACTIVE" | "DELETED";
+
+export type AssigneeStatus =
+  | "TODO"
+  | "IN_PROGRESS"
+  | "DONE";
+
+export interface ITaskAssignee {
+  userId: Types.ObjectId;
+  status: AssigneeStatus;
+}
+
+export interface ITask {
+  _id: Types.ObjectId;
+
+  spaceId: Types.ObjectId;
+  createdBy: Types.ObjectId;
+
   title: string;
   description?: string;
 
-  status: "TODO" | "IN_PROGRESS" | "DONE";
-  priority: "LOW" | "MEDIUM" | "HIGH";
+  priority: TaskPriority;
+  deadline: Date;
 
-  spaceId: Types.ObjectId;
-  creatorId: Types.ObjectId;
-  assigneeId?: Types.ObjectId;
+  progressStatus: TaskProgressStatus;
+  lifecycleStatus: TaskLifecycleStatus;
 
-  dueDate?: Date;
-
-  labels: string[];
+  assignees: ITaskAssignee[];
 
   createdAt: Date;
   updatedAt: Date;

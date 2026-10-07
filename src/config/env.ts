@@ -5,11 +5,17 @@ if(!port){
     throw new Error("PORT is not defined")
 }
 const PORT:string=port;
-const secretKey=process.env.SECRET_KEY;
-if(!secretKey){
-    throw new Error("SECRET_KEY is not defined")
+const accessSecretKey=process.env.SECRET_KEY_ACCESS;
+const refreshSecretKey=process.env.SECRET_KEY_REFRESH;
+if(!accessSecretKey){
+    throw new Error("SECRET_KEY_ACCESS is not defined")
 }
-const SECRET_KEY:string=secretKey
+if(!refreshSecretKey){
+    throw new Error("SECRET_KEY_REFRESH is not defined")
+}
+
+const SECRET_KEY_ACCESS:string=accessSecretKey
+const SECRET_KEY_REFRESH:string=refreshSecretKey
 const mongourl=process.env.MONGO_URL
 if(!mongourl){
     throw new Error("MONGO_URL is not defined")
@@ -20,4 +26,4 @@ if(!nodeEnv){
     throw new Error("NODE_ENV is not defined")
 }
 const NODE_ENV:string=nodeEnv
-export {SECRET_KEY,PORT,MONGO_URL,NODE_ENV};
+export {SECRET_KEY_ACCESS,SECRET_KEY_REFRESH,PORT,MONGO_URL,NODE_ENV};

@@ -4,7 +4,7 @@ import {IUser} from "../types/user.types.js";
 import { ILogin } from "../types/auth.types.js";
 import bcrypt from "bcrypt"
 import Jwt from "jsonwebtoken"
-import { SECRET_KEY } from "../config/env.js";
+import { SECRET_KEY_ACCESS,SECRET_KEY_REFRESH} from "../config/env.js";
 export async function registerUser(user:IUser){
     const exists=await User.findOne({email:user.email})
     if(exists){
@@ -28,6 +28,9 @@ export async function userLogin(user:ILogin){
     if(!match){
          throw new AppError("Invalid email or Password",401);
     }
-    const token=Jwt.sign({id:exists._id},SECRET_KEY,{expiresIn:"1d"})
-    return token;
+    const accessToken=Jwt.sign({id:exists._id},SECRET_KEY_ACCESS,{expiresIn:"1h"})
+    const refreshToken=Jwt.sign({id:exists._id},SECRET_KEY_REFRESH,{expiresIn:"1d"})
+    exists.refreshToken=refreshToken
+    await exists.save()
+    return {accessToken,refreshToken};
 }

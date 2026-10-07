@@ -26,6 +26,9 @@ const userSchema = new Schema<IUser>(
       required: true,
       select: false,
     },
+    refreshToken: {
+      type:String
+    }
   },
   {
     timestamps: true,

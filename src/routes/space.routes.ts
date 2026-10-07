@@ -13,11 +13,13 @@ import {
 
 const spaceRouter = express.Router();
 
-// Making all these routes accessible to logged in users.
+// Making all space routes accessible only to logged in users
 spaceRouter.use(authMiddleware);
 
+// 1. Create space
 spaceRouter.post("/", validate(spaceSchema), asyncHandler(handleCreateSpace));
 
+// 2. Get all spaces belonging to user
 spaceRouter.get("/", asyncHandler(handleGetMySpaces));
 
 // TODO: Add spaceAccessMiddleware to check if user belongs to this space
@@ -26,7 +28,7 @@ spaceRouter.get(":/id", asyncHandler(handleGetMySpaces));
 // TODO: Add spaceAccessMiddleware to verify owner/admin privileges
 spaceRouter.put("/:id", validate(updateSpaceSchema) ,asyncHandler(handleUpdateSpace));
 
-// todo : add space access middleware to verify owner privileges
+// todo : add spaceAccessMiddleware to verify owner privileges
 spaceRouter.patch("/:id/deactivate", asyncHandler(handleDeactivateSpace));
 
 export default spaceRouter;

@@ -24,6 +24,6 @@ const spaceMemberSchema = new Schema<ISpaceMember>({
   },
 });
 spaceMemberSchema.index({
-  spacedId:1,userId:1
+  spaceId:1,userId:1
 },{unique:true})
 export const SpaceMember = model<ISpaceMember>("SpaceMember", spaceMemberSchema);

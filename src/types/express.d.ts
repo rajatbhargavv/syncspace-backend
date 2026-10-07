@@ -1,3 +1,5 @@
+import { ISpace } from "./space.types.ts";
+
 export {};
 
 declare global {
@@ -7,6 +9,7 @@ declare global {
                 id: string;
                 [key: string]: any;
             };
+            space?: ISpace;
         }
     }
 }

@@ -4,9 +4,12 @@ import AppError from "../utils/AppError.js";
 import { SECRET_KEY } from "../config/env.js";
 export function authMiddleware(req:Request,res:Response,next:NextFunction){
     try{
-    const {token}=req.cookies;
-    if(!token){
-        throw new AppError("Not Authorized",401)
+    let token = req.cookies?.token;
+    if(!token && req.headers.authorization?.startsWith("Bearer")){
+        token = req.headers.authorization.split(" ")[1];
+    }
+    if (!token) {
+        throw new AppError("Not Authorized", 401);
     }
     const check=jwt.verify(token,SECRET_KEY)
     if(check && typeof check!=="string"){

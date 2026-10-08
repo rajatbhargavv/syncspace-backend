@@ -1,0 +1,111 @@
+@baseUrl = http://localhost:5000/api
+
+### 1. Register Alice (Owner)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "Alice Owner",
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+### 2. Register Bob (Member)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "Bob Member",
+    "email": "bob@example.com",
+    "password": "Password123!"
+}
+
+### 3. Login as Alice (saves token cookie automatically)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+### 4. Alice creates a Space
+# @name createSpace
+POST {{baseUrl}}/spaces
+Content-Type: application/json
+
+{
+    "name": "SyncSpace Dev Team",
+    "description": "Collaboration space for devs"
+}
+
+### Grab the spaceId from step 4:
+@spaceId = {{createSpace.response.body.space._id}}
+
+### 5. Alice gets her spaces
+GET {{baseUrl}}/spaces
+
+### 6. Alice views the space by ID (Owner access: 200 OK)
+GET {{baseUrl}}/spaces/{{spaceId}}
+
+### 7. Login as Bob
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "bob@example.com",
+    "password": "Password123!"
+}
+
+### 8. Bob tries to view Alice's space BEFORE joining
+# Expect: 403 Forbidden ("Access denied: You are not a member of this space")
+GET {{baseUrl}}/spaces/{{spaceId}}
+
+### 9. Bob tries to rename Alice's space
+# Expect: 403 Forbidden ("Only the space owner can perform this action")
+PUT {{baseUrl}}/spaces/{{spaceId}}
+Content-Type: application/json
+
+{
+    "name": "Hacked Space"
+}
+
+### 10. Bob joins the space
+# Expect: 200 OK
+POST {{baseUrl}}/spaces/{{spaceId}}/join
+
+### 11. Bob tries to join AGAIN
+# Expect: 409 Conflict ("Already a member")
+POST {{baseUrl}}/spaces/{{spaceId}}/join
+
+### 12. Bob views the space AFTER joining
+# Expect: 200 OK (Allowed by requireSpaceMember!)
+GET {{baseUrl}}/spaces/{{spaceId}}
+
+### 13. List all members in space
+GET {{baseUrl}}/spaces/{{spaceId}}/members
+
+### 14. Bob leaves the space
+# Expect: 200 OK
+POST {{baseUrl}}/spaces/{{spaceId}}/leave
+
+### 15. Bob tries to view the space after leaving
+# Expect: 403 Forbidden
+GET {{baseUrl}}/spaces/{{spaceId}}
+
+### 16. Switch back to Alice (Login Alice)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+### 17. Alice deactivates the space
+# Expect: 200 OK
+PATCH {{baseUrl}}/spaces/{{spaceId}}/deactivate
+
+### 18. Alice tries to get deactivated space
+# Expect: 404 Space not found
+GET {{baseUrl}}/spaces/{{spaceId}}

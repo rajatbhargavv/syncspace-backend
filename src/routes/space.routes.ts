@@ -10,6 +10,7 @@ import {
     handleGetSpaceByID, 
     handleUpdateSpace 
 } from "../controllers/space.controller.js";
+import { requireSpaceMember, requireSpaceOwner } from "../middleware/spaceAccess.middleware.js";
 
 const spaceRouter = express.Router();
 
@@ -23,12 +24,12 @@ spaceRouter.post("/", validate(spaceSchema), asyncHandler(handleCreateSpace));
 spaceRouter.get("/", asyncHandler(handleGetMySpaces));
 
 // TODO: Add spaceAccessMiddleware to check if user belongs to this space
-spaceRouter.get(":/id", asyncHandler(handleGetMySpaces));
+spaceRouter.get("/:id", requireSpaceMember, asyncHandler(handleGetSpaceByID));
 
 // TODO: Add spaceAccessMiddleware to verify owner/admin privileges
-spaceRouter.put("/:id", validate(updateSpaceSchema) ,asyncHandler(handleUpdateSpace));
+spaceRouter.put("/:id", requireSpaceOwner, validate(updateSpaceSchema) ,asyncHandler(handleUpdateSpace));
 
 // todo : add spaceAccessMiddleware to verify owner privileges
-spaceRouter.patch("/:id/deactivate", asyncHandler(handleDeactivateSpace));
+spaceRouter.patch("/:id/deactivate", requireSpaceOwner, asyncHandler(handleDeactivateSpace));
 
 export default spaceRouter;

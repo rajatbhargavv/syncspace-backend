@@ -59,3 +59,5 @@ const requireSpaceMember = async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 }
+
+export { requireSpaceOwner, requireSpaceMember };

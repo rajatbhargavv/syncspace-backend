@@ -14,8 +14,8 @@ export async function handleregisterUser(req:Request,res:Response,next:NextFunct
 
 export async function handleuserLogin(req:Request,res:Response,next:NextFunction){
     const user:ILogin=req.body;
-    const token=await userLogin(user);
-    res.cookie("token",token,{
+    const { accessToken } = await userLogin(user);
+    res.cookie("token",accessToken,{
         httpOnly:true,
         sameSite:"strict",
         maxAge:24*60*60*1000,

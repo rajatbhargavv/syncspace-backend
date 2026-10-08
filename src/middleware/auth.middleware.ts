@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken"
 import AppError from "../utils/AppError.js";
-import { SECRET_KEY } from "../config/env.js";
+import { SECRET_KEY_ACCESS } from "../config/env.js";
 export function authMiddleware(req:Request,res:Response,next:NextFunction){
     try{
     let token = req.cookies?.token;
@@ -11,7 +11,7 @@ export function authMiddleware(req:Request,res:Response,next:NextFunction){
     if (!token) {
         throw new AppError("Not Authorized", 401);
     }
-    const check=jwt.verify(token,SECRET_KEY)
+    const check=jwt.verify(token,SECRET_KEY_ACCESS)
     if(check && typeof check!=="string"){
         req.user={id:check.id};
     }

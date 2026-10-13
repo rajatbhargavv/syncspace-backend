@@ -38,4 +38,8 @@ const editComment = async (data: IUpdateComments) => {
     );
 }
 
-
+const deleteComment = async (commentId: string) => {
+    if(!commentId)
+        throw new AppError("CommentId is not provided", 404);
+    return await Comment.findOneAndDelete({_id: commentId});
+}

@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { IComments } from "../types/comments.types.js";
 import { Schema, model } from "mongoose";
 
-const commentsSchema = new Schema(
+const commentsSchema = new Schema<IComments>(
   {
     _id: {
       type: String,
@@ -25,10 +25,13 @@ const commentsSchema = new Schema(
     edited: {
       type: Boolean,
       default: false,
-      required: true,
     },
   },
   {
     timestamps: true,
   },
 );
+
+const Comment = model<IComments>("Comment", commentsSchema);
+
+export default Comment;

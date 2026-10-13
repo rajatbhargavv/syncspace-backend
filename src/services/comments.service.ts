@@ -1,9 +1,8 @@
-import { IComments, IUpdateComments } from "../types/comments.types.js";
+import { IAddComments, IComments, IUpdateComments } from "../types/comments.types.js";
 import AppError from "../utils/AppError.js";
 import Comment from "../models/Comment.model.js";
-import Task from "../models/Task.model.js";
 
-const add_comment = async (data: IComments) => {
+const addComment = async (data: IAddComments) => {
     if(!data.userId || !data.taskId) {
         throw new AppError("UserId and TaskId is required, not found",404);
     }
@@ -43,3 +42,5 @@ const deleteComment = async (commentId: string) => {
         throw new AppError("CommentId is not provided", 404);
     return await Comment.findOneAndDelete({_id: commentId});
 }
+
+export { getComments, addComment, editComment, deleteComment };

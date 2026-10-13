@@ -8,6 +8,11 @@ export interface IComments{
     updatedAt: Date
 }
 
+export interface IAddComments{
+    taskId: string,
+    userId: string,
+    content: string
+}
 export interface IUpdateComments{
     _id: string,
     content: string,

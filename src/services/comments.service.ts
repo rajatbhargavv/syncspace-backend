@@ -13,3 +13,4 @@ const add_comment = async (data: IComments) => {
     })
     return await new_comment.save();
 }
+

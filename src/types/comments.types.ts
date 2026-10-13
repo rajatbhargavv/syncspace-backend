@@ -7,3 +7,8 @@ export interface IComments{
     createdAt: Date,
     updatedAt: Date
 }
+
+export interface IUpdateComments{
+    _id: string,
+    content: string,
+}

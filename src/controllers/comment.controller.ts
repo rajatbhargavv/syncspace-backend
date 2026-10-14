@@ -4,20 +4,17 @@ import {
   deleteComment,
   getComments,
   updateComment,
-} from "../services/comments.service.js";
+} from "../services/comment.service.js";
 import AppError from '../utils/AppError.js';
-import { ICreateComment, IUpdateComment } from '../types/comments.types.js';
+import { ICreateComment, IUpdateComment } from '../types/comment.types.js';
 
 export async function handleCreateComment(req: Request, res: Response, next: NextFunction){
-    const userId = req.user?.id || req.body.userId;
+    const userId = req.user!.id;
     const taskId = req.params.taskId as string;
     if (!taskId) {
         throw new AppError("TaskId is required", 400);
     }
     const content = req.body.content;
-    if (!content) {
-        throw new AppError("Content is required", 400);
-    }
     const addData: ICreateComment = {
         userId,
         taskId,
@@ -55,7 +52,9 @@ export async function handleGetComments(req: Request, res: Response, next: NextF
     if (!taskId) {
         throw new AppError("TaskId is required", 400);
     }
-    const comments = await getComments(taskId);
+    // viewerUserId from authentication is used ONLY to verify the requester has permission to view this task's comments
+    const viewerUserId = req.user!.id;
+    const comments = await getComments(taskId, viewerUserId);
     return res.status(200).json({
         message: "comments fetched successfully",
         comments
@@ -63,7 +62,7 @@ export async function handleGetComments(req: Request, res: Response, next: NextF
 }
 
 export async function handleDeleteComment(req: Request, res: Response, next: NextFunction){
-    const commentId = req.params.commentId as string;
+    const commentId = (req.params.commentId || req.body.commentId) as string;
     if(!commentId) {
         throw new AppError("CommentId is required", 400);
     }

@@ -18,3 +18,4 @@ export interface IUpdateComment {
     _id: string;
     content: string;
 }
+

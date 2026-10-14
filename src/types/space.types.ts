@@ -2,7 +2,7 @@ export interface ISpace {
     _id: string;
     name: string;
     description?: string;
-    ownerID: string;
+    ownerId: string;
     status: 'Active' | 'Inactive';
     createdAt: Date;
     updatedAt: Date;
@@ -11,7 +11,7 @@ export interface ISpace {
 export interface ICreateSpace {
     name: string;
     description?: string;
-    ownerID: string;
+    ownerId: string;
 }
 
 export interface IUpdateSpace {

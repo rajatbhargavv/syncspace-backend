@@ -1,13 +1,13 @@
 import express from "express";
 import asyncHandler from "../utils/asyncHandler.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 import validate from "../middleware/validation.middleware.js";
 import { spaceSchema, updateSpaceSchema } from "../validators/space.validator.js";
 import { 
     handleCreateSpace, 
     handleDeactivateSpace, 
     handleGetMySpaces, 
-    handleGetSpaceByID, 
+    handleGetSpaceById, 
     handleUpdateSpace 
 } from "../controllers/space.controller.js";
 import { requireSpaceMember, requireSpaceOwner } from "../middleware/spaceAccess.middleware.js";
@@ -15,7 +15,7 @@ import { requireSpaceMember, requireSpaceOwner } from "../middleware/spaceAccess
 const spaceRouter = express.Router();
 
 // Making all space routes accessible only to logged in users
-spaceRouter.use(authMiddleware);
+spaceRouter.use(requireAuth);
 
 // 1. Create space
 spaceRouter.post("/", validate(spaceSchema), asyncHandler(handleCreateSpace));
@@ -23,8 +23,8 @@ spaceRouter.post("/", validate(spaceSchema), asyncHandler(handleCreateSpace));
 // 2. Get all spaces belonging to user
 spaceRouter.get("/", asyncHandler(handleGetMySpaces));
 
-// TODO: Add spaceAccessMiddleware to check if user belongs to this space
-spaceRouter.get("/:id", requireSpaceMember, asyncHandler(handleGetSpaceByID));
+// 3. Get single space by space ID
+spaceRouter.get("/:id", requireSpaceMember, asyncHandler(handleGetSpaceById));
 
 // TODO: Add spaceAccessMiddleware to verify owner/admin privileges
 spaceRouter.put("/:id", requireSpaceOwner, validate(updateSpaceSchema) ,asyncHandler(handleUpdateSpace));

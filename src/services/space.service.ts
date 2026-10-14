@@ -3,37 +3,37 @@ import { ICreateSpace, IUpdateSpace } from "../types/space.types.js";
 import AppError from "../utils/AppError.js";
 
 export const createSpace = async (data: ICreateSpace) => {
-    if (!data.ownerID) {
-        throw new AppError("ownerID is required to create a space", 400);
+    if (!data.ownerId) {
+        throw new AppError("ownerId is required to create a space", 400);
     }
 
     const newSpace = new Space({
         name: data.name,
         description: data.description,
-        ownerID: data.ownerID
+        ownerId: data.ownerId
     });
     return await newSpace.save();
 };
 
-export const getMySpaces = async (userID: string) => {
-    return await Space.find({ ownerID: userID }).sort({ createdAt: -1 });
+export const getMySpaces = async (userId: string) => {
+    return await Space.find({ ownerId: userId }).sort({ createdAt: -1 });
 };
 
-export const getSpaceById = async (userID: string, spaceID: string) => {
-    return await Space.findOne({ _id: spaceID, ownerID: userID });
+export const getSpaceById = async (userId: string, spaceId: string) => {
+    return await Space.findOne({ _id: spaceId, ownerId: userId });
 };
 
-export const updateSpace = async (userID: string, spaceID: string, updateData: IUpdateSpace) => {
+export const updateSpace = async (userId: string, spaceId: string, updateData: IUpdateSpace) => {
     return await Space.findOneAndUpdate(
-        { _id: spaceID, ownerID: userID },
+        { _id: spaceId, ownerId: userId },
         { $set: updateData },
         { new: true, runValidators: true }
     );
 };
 
-export const deactivateSpace = async (userID: string, spaceID: string) => {
+export const deactivateSpace = async (userId: string, spaceId: string) => {
     return await Space.findOneAndUpdate(
-        { _id: spaceID, ownerID: userID },
+        { _id: spaceId, ownerId: userId },
         { status: 'Inactive' },
         { new: true }
     );

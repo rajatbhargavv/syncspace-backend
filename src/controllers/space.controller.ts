@@ -13,14 +13,14 @@ import { ICreateSpace, IUpdateSpace } from '../types/space.types.js';
 
 // 1. create a new space
 export async function handleCreateSpace(req: Request, res: Response, next: NextFunction){
-    const ownerID = req.user?.id || req.body.ownerID;
-    if(!ownerID) {
-        throw new AppError("OwnerID is required to create a space", 400);
+    const ownerId = req.user?.id || req.body.ownerId;
+    if(!ownerId) {
+        throw new AppError("OwnerId is required to create a space", 400);
     }
     const spaceData: ICreateSpace = {
         name:        req.body.name,
         description: req.body.description,
-        ownerID:     ownerID
+        ownerId:     ownerId
     };
     const space = await createSpace(spaceData);
     res.status(201).json({
@@ -31,11 +31,11 @@ export async function handleCreateSpace(req: Request, res: Response, next: NextF
 
 // 2. Get all spaces belonging to current user
 export async function handleGetMySpaces(req: Request, res: Response, next: NextFunction){
-    const userID = req.user?.id || (req.query.userID as string);
-    if(!userID) {
-        throw new AppError("UserID is required", 400);
+    const userId = req.user?.id || (req.query.userId as string);
+    if(!userId) {
+        throw new AppError("UserId is required", 400);
     }
-    const spaces = await getMySpaces(userID);
+    const spaces = await getMySpaces(userId);
     res.status(200).json({
         message: "Spaces fetched successfully",
         spaces
@@ -43,16 +43,23 @@ export async function handleGetMySpaces(req: Request, res: Response, next: NextF
 }
 
 // 3. Get Space of User by space ID
-export async function handleGetSpaceByID(req: Request, res: Response, next: NextFunction){
-    const userID = req.user?.id || (req.query.userID as string);
-    if(!userID) {
-        throw new AppError("UserID is required", 400);
+export async function handleGetSpaceById(req: Request, res: Response, next: NextFunction){
+    // Optimization: Reuse space if already verified and fetched by middleware
+    if (req.space) {
+        return res.status(200).json({
+            message: "space fetched successfully",
+            space: req.space
+        });
     }
-    const spaceID = req.params.id as string;
-    if(!spaceID) {
-        throw new AppError("SpaceID is required", 400);
+    const userId = req.user?.id || (req.query.userId as string);
+    if(!userId) {
+        throw new AppError("UserId is required", 400);
     }
-    const space = await getSpaceById(userID, spaceID);
+    const spaceId = req.params.id as string;
+    if(!spaceId) {
+        throw new AppError("SpaceId is required", 400);
+    }
+    const space = await getSpaceById(userId, spaceId);
     res.status(200).json({
         message: "space fetched successfully",
         space
@@ -61,13 +68,13 @@ export async function handleGetSpaceByID(req: Request, res: Response, next: Next
 
 // 4. Update a space
 export async function handleUpdateSpace(req: Request, res: Response, next: NextFunction){
-    const userID = req.user?.id ;
-    const spaceID = req.params.id as string;
-    if(!userID){
-        throw new AppError("UserID is required", 400);
+    const userId = req.user?.id ;
+    const spaceId = req.params.id as string;
+    if(!userId){
+        throw new AppError("UserId is required", 400);
     }
-    if(!spaceID){
-        throw new AppError("SpaceID is required", 400);
+    if(!spaceId){
+        throw new AppError("SpaceId is required", 400);
     }
     const updateData: IUpdateSpace = {};
     if(req.body.name!==undefined){
@@ -79,7 +86,7 @@ export async function handleUpdateSpace(req: Request, res: Response, next: NextF
     if(req.body.status!==undefined){
         updateData.status=req.body.status;
     }
-    const space = await updateSpace(userID, spaceID, updateData);
+    const space = await updateSpace(userId, spaceId, updateData);
     if(!space){
         throw new AppError("Space not authorized or found", 400);
     }
@@ -91,15 +98,15 @@ export async function handleUpdateSpace(req: Request, res: Response, next: NextF
 
 // 5. Deactivate a Space
 export async function handleDeactivateSpace(req: Request, res: Response, next: NextFunction){
-    const userID = req.user?.id || req.body.ownerID;
-    const spaceID = req.params.id as string;
-    if(!userID) {
-        throw new AppError("UserID is required", 400);
+    const userId = req.user?.id || req.body.ownerId;
+    const spaceId = req.params.id as string;
+    if(!userId) {
+        throw new AppError("UserId is required", 400);
     }
-    if(!spaceID) {
-        throw new AppError("SpaceIF is required", 400);
+    if(!spaceId) {
+        throw new AppError("SpaceId is required", 400);
     }
-    const space = await deactivateSpace(userID, spaceID);
+    const space = await deactivateSpace(userId, spaceId);
     if(!space) {
         throw new AppError("Space not found or authorized", 404);
     }

@@ -17,7 +17,7 @@ const createComment = async (data: ICreateComment) => {
 // getting tasks comments
 const getComments = async (taskId: string) => {
     if(!taskId)
-        throw new AppError("TaskID is required", 400);
+        throw new AppError("TaskId is required", 400);
     const comments = await Comment.find({ taskId });
     return comments;
 };
@@ -27,7 +27,7 @@ const updateComment = async (data: IUpdateComment) => {
         throw new AppError("CommentId is not provided", 400);
     const comment = await Comment.findById(data._id);
     if(!comment)
-        throw new AppError("Comment not found with the given commentID", 404);
+        throw new AppError("Comment not found with the given commentId", 404);
     return await Comment.findOneAndUpdate(
         { _id: data._id },
         { $set: { content: data.content, edited: true } },

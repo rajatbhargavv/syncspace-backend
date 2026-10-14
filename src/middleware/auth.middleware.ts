@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import AppError from "../utils/AppError.js";
 import { SECRET_KEY_ACCESS } from "../config/env.js";
+
 export function authMiddleware(
   req: Request,
   res: Response,

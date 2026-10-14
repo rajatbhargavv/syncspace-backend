@@ -1,16 +1,27 @@
 import { Router } from "express";
+import asyncHandler from "../utils/asyncHandler.js";
 import {
-  handleAddComment,
+  handleCreateComment,
   handleDeleteComment,
-  handleEditComment,
   handleGetComments,
+  handleUpdateComment,
 } from "../controllers/comment.controller.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireCommentOwner } from "../middleware/comment.middleware.js";
 
 const commentRouter = Router();
-commentRouter.use(authMiddleware);
+commentRouter.use(requireAuth);
 
-commentRouter.patch("/:commentId", requireCommentOwner, handleEditComment);
+// Add a comment to a task
+commentRouter.post("/task/:taskId", asyncHandler(handleCreateComment));
 
-commentRouter.delete("/:commentID", requireCommentOwner, handleDeleteComment);
+// Get all comments for a task
+commentRouter.get("/task/:taskId", asyncHandler(handleGetComments));
+
+// Edit comment (owner only)
+commentRouter.patch("/:commentId", requireCommentOwner, asyncHandler(handleUpdateComment));
+
+// Delete comment (owner only)
+commentRouter.delete("/:commentId", requireCommentOwner, asyncHandler(handleDeleteComment));
+
+export default commentRouter;

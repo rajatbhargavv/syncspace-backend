@@ -1,43 +1,49 @@
 import { Request , Response, NextFunction } from 'express';
-
 import {
-  addComment,
+  createComment,
   deleteComment,
-  editComment,
   getComments,
+  updateComment,
 } from "../services/comments.service.js";
 import AppError from '../utils/AppError.js';
+import { ICreateComment, IUpdateComment } from '../types/comments.types.js';
 
-import {IAddComments, IComments, IUpdateComments} from '../types/comments.types.js';
-import constants from 'constants';
-
-export async function handleAddComment(req: Request, res: Response, next: NextFunction){
+export async function handleCreateComment(req: Request, res: Response, next: NextFunction){
     const userId = req.user?.id || req.body.userId;
-    const taskId = req.params.taskId;
-    if (typeof taskId !== "string") {
-        throw new Error("Invalid taskId");
+    const taskId = req.params.taskId as string;
+    if (!taskId) {
+        throw new AppError("TaskId is required", 400);
     }
     const content = req.body.content;
-    const addData: IAddComments = {
+    if (!content) {
+        throw new AppError("Content is required", 400);
+    }
+    const addData: ICreateComment = {
         userId,
         taskId,
         content
     };
-    const comment = await addComment(addData);
-    return res.status(200).json({
+    const comment = await createComment(addData);
+    return res.status(201).json({
         message: "Comment added successfully",
         comment
     });
 }
 
-export async function handleEditComment(req: Request, res: Response, next: NextFunction){
-    const commentId = req.body.commentId;
+export async function handleUpdateComment(req: Request, res: Response, next: NextFunction){
+    const commentId = (req.params.commentId || req.body.commentId) as string;
+    if (!commentId) {
+        throw new AppError("CommentId is required", 400);
+    }
     const content = req.body.content;
-    const editData: IUpdateComments = {
+    if (!content) {
+        throw new AppError("Content is required", 400);
+    }
+    const editData: IUpdateComment = {
         _id: commentId,
         content: content
     };
-    const comment = await editComment(editData);
+    const comment = await updateComment(editData);
     return res.status(200).json({
         message: "Comment edited successfully",
         comment
@@ -45,9 +51,10 @@ export async function handleEditComment(req: Request, res: Response, next: NextF
 }
 
 export async function handleGetComments(req: Request, res: Response, next: NextFunction){
-    const taskId = req.params.taskId;
-    if(typeof taskId !== "string")
-        throw new Error("Invalid taskId");
+    const taskId = req.params.taskId as string;
+    if (!taskId) {
+        throw new AppError("TaskId is required", 400);
+    }
     const comments = await getComments(taskId);
     return res.status(200).json({
         message: "comments fetched successfully",
@@ -56,12 +63,11 @@ export async function handleGetComments(req: Request, res: Response, next: NextF
 }
 
 export async function handleDeleteComment(req: Request, res: Response, next: NextFunction){
-    const commentId = req.params.commentId;
-    if(!commentId)
-        throw new AppError("commentId is required", 404);
-    if(typeof commentId !== "string")
-        throw new AppError("CommentId is not string.", 401);
-    const comment = deleteComment(commentId);
+    const commentId = req.params.commentId as string;
+    if(!commentId) {
+        throw new AppError("CommentId is required", 400);
+    }
+    const comment = await deleteComment(commentId);
     return res.status(200).json({
         message: "Comment deleted successfully",
         comment

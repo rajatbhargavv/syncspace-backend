@@ -1,19 +1,20 @@
-export interface IComments{
-    _id: string,
-    taskId: string,
-    userId: string,
-    content: string,
-    edited: boolean,
-    createdAt: Date,
-    updatedAt: Date
+export interface IComment {
+    _id: string;
+    taskId: string;
+    userId: string;
+    content: string;
+    edited: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-export interface IAddComments{
-    taskId: string,
-    userId: string,
-    content: string
+export interface ICreateComment {
+    taskId: string;
+    userId: string;
+    content: string;
 }
-export interface IUpdateComments{
-    _id: string,
-    content: string,
+
+export interface IUpdateComment {
+    _id: string;
+    content: string;
 }

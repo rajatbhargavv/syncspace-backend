@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
-import { IComments } from "../types/comments.types.js";
+import { IComment } from "../types/comments.types.js";
 import { Schema, model } from "mongoose";
 
-const commentsSchema = new Schema<IComments>(
+const commentsSchema = new Schema<IComment>(
   {
     _id: {
       type: String,
@@ -32,6 +32,6 @@ const commentsSchema = new Schema<IComments>(
   },
 );
 
-const Comment = model<IComments>("Comment", commentsSchema);
+const Comment = model<IComment>("Comment", commentsSchema);
 
 export default Comment;

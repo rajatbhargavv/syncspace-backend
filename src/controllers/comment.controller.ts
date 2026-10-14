@@ -54,3 +54,16 @@ export async function handleGetComments(req: Request, res: Response, next: NextF
         comments
     });
 }
+
+export async function handleDeleteComment(req: Request, res: Response, next: NextFunction){
+    const commentId = req.params.commentId;
+    if(!commentId)
+        throw new AppError("commentId is required", 404);
+    if(typeof commentId !== "string")
+        throw new AppError("CommentId is not string.", 401);
+    const comment = deleteComment(commentId);
+    return res.status(200).json({
+        message: "Comment deleted successfully",
+        comment
+    });
+}

@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import AppError from "../utils/AppError.js";
 import { SECRET_KEY_ACCESS } from "../config/env.js";
 
-export function authMiddleware(
+export function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction,

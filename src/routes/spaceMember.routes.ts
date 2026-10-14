@@ -1,6 +1,6 @@
 import express from "express";
 import asyncHandler from "../utils/asyncHandler.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 import { 
     handleGetSpaceMembers, 
     handleJoinSpace, 
@@ -10,7 +10,7 @@ import {
 
 const spaceMemberRouter = express.Router();
 // using the authentication middleware before every route
-spaceMemberRouter.use(authMiddleware);
+spaceMemberRouter.use(requireAuth);
 
 // creating the routes on proper endpoints and calling the controller
 

@@ -28,7 +28,7 @@ export async function userLogin(user: ILogin) {
     throw new AppError("Invalid email or Password", 401);
   }
   const accessToken = Jwt.sign({ id: exists._id }, SECRET_KEY_ACCESS, {
-    expiresIn: "1h",
+    expiresIn: "15m",
   });
   const refreshToken = Jwt.sign({ id: exists._id }, SECRET_KEY_REFRESH, {
     expiresIn: "1d",

@@ -5,4 +5,9 @@ interface IUser {
     password:string,
     refreshToken?:string
 }
-export {IUser}
+interface IUpdateUser {
+    name? :string,
+    email? :string,
+    password? :string
+}
+export {IUser,IUpdateUser}

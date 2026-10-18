@@ -3,6 +3,7 @@ interface IUser {
     name:string,
     email:string,
     password:string,
+    isDeleted:boolean,
     refreshToken?:string
 }
 interface IUpdateUser {

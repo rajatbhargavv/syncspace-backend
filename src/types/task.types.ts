@@ -15,15 +15,15 @@ export type AssigneeStatus =
   | "DONE";
 
 export interface ITaskAssignee {
-  userId: Types.ObjectId;
+  userId: string;
   status: AssigneeStatus;
 }
 
 export interface ITask {
-  _id: Types.ObjectId;
+  _id: string;
 
-  spaceId: Types.ObjectId;
-  createdBy: Types.ObjectId;
+  spaceId: string;
+  createdBy: string;
 
   title: string;
   description?: string;

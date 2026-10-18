@@ -21,7 +21,7 @@ export async function getUserById(userId: string) {
   }
   return exists;
 }
-export async function deleteUserById(userId: string) {
+export async function deleteUser(userId: string) {
   const exists = await User.findById(userId);
   if (!exists) {
     throw new AppError("No such user exists", 404);

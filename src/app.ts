@@ -10,7 +10,7 @@ const app=express();
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth",authRouter);
-
+app.use("/api/user", spaceRouter);
 // both spaceRouter and spaceMemberRouter are subfields of /api/spaces
 app.use("/api/spaces", spaceRouter);
 app.use("/api/spaces", spaceMemberRouter);

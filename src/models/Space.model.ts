@@ -27,7 +27,11 @@ const spaceSchema = new Schema<ISpace>(
             enum: ['Active', 'Inactive'],
             default: 'Active'
         },
-        
+        spaceType:{
+            type:String,
+            enum:['Personal','Shared'],
+            required:true
+        }
     },{
         timestamps: true
     }

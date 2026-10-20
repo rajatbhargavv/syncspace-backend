@@ -4,6 +4,7 @@ export interface ISpace {
     description?: string;
     ownerId: string;
     status: 'Active' | 'Inactive';
+    spaceType:'Personal' | 'Shared'
     createdAt: Date;
     updatedAt: Date;
 }

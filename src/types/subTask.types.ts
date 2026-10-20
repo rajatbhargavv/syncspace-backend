@@ -10,7 +10,7 @@ interface ISubtask {
   title: string;
   description?: string;
 
-  assigneeId: Types.ObjectId;
+  assigneeId: string;
 
   priority: SubTaskPriority;
   deadline: Date;

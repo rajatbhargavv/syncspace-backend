@@ -1,16 +1,20 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 import { ITask } from "../types/task.types.js";
-
+import { randomUUID } from "crypto";
 const taskSchema = new Schema<ITask>(
   {
+    _id: {
+      type: String,
+      default: () => "Task_" + randomUUID(),
+    },
     spaceId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: "Space",
       required: true,
     },
 
     createdBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: "User",
       required: true,
     },
@@ -52,7 +56,7 @@ const taskSchema = new Schema<ITask>(
     assignees: [
       {
         userId: {
-          type: Schema.Types.ObjectId,
+          type: String,
           ref: "User",
           required: true,
         },
@@ -67,7 +71,7 @@ const taskSchema = new Schema<ITask>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Useful for fetching tasks belonging to a Space

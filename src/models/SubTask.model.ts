@@ -21,7 +21,7 @@ const subtaskSchema = new Schema<ISubtask>(
     },
 
     assigneeId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: "User",
       required: true,
     },

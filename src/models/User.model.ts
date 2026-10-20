@@ -26,8 +26,13 @@ const userSchema = new Schema<IUser>(
       required: true,
       select: false,
     },
+    isDeleted:{
+      type:Boolean,
+      default:false
+    },
     refreshToken: {
-      type:String
+      type:String,
+      select:false
     }
   },
   {

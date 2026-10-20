@@ -3,6 +3,12 @@ interface IUser {
     name:string,
     email:string,
     password:string,
+    isDeleted:boolean,
     refreshToken?:string
 }
-export {IUser}
+interface IUpdateUser {
+    name? :string,
+    email? :string,
+    password? :string
+}
+export {IUser,IUpdateUser}

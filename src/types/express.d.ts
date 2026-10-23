@@ -1,5 +1,5 @@
 import { ISpace } from "./space.types.js";
-import { IComment } from "./comments.types.js";
+import { IComment } from "./comment.types.js";
 import { ISpaceMember } from "./spaceMember.types.js";
 
 export {};

@@ -53,57 +53,6 @@ export async function handleUserLogin(req: Request, res: Response, next: NextFun
   });
 }
 
-export async function handleRefreshToken(req: Request, res: Response, next: NextFunction) {
-  const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-
-  const { accessToken, refreshToken } = await refreshAccessToken(incomingRefreshToken);
-
-  res.cookie("accessToken", accessToken, {
-    ...COOKIE_BASE_OPTIONS,
-    maxAge: 15 * 60 * 1000,
-  });
-
-  res.cookie("token", accessToken, {
-    ...COOKIE_BASE_OPTIONS,
-    maxAge: 24 * 60 * 60 * 1000,
-  });
-
-  res.cookie("refreshToken", refreshToken, {
-    ...COOKIE_BASE_OPTIONS,
-    maxAge: 24 * 60 * 60 * 1000,
-  });
-
-  return res.status(200).json({
-    message: "Token refreshed successfully",
-    accessToken,
-  });
-}
-
-export async function handleLogout(req: Request, res: Response, next: NextFunction) {
-  const userId = req.user?.id;
-  const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-
-  if (userId) {
-    await logoutUser(userId);
-  } else if (incomingRefreshToken) {
-    try {
-      const decoded = Jwt.verify(incomingRefreshToken, SECRET_KEY_REFRESH) as { id: string };
-      if (decoded?.id) {
-        await logoutUser(decoded.id);
-      }
-    } catch {
-      // Token expired or invalid; proceed with clearing cookies
-    }
-  }
-
-  res.clearCookie("accessToken", COOKIE_BASE_OPTIONS);
-  res.clearCookie("refreshToken", COOKIE_BASE_OPTIONS);
-  res.clearCookie("token", COOKIE_BASE_OPTIONS);
-
-  return res.status(200).json({
-    message: "Logged out successfully",
-  });
-}
 
 export async function handleRefreshToken(req: Request, res: Response, next: NextFunction) {
   const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;

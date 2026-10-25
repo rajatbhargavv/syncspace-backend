@@ -7,34 +7,62 @@ const spaceSchema = new Schema<ISpace>(
     {
         _id: {
             type: String,
-            default : () => 'Space_' + randomUUID()
+            default: () => 'Space_' + randomUUID()
         },
-        name:{
+        name: {
             type: String,
             required: true
         },
-        description:{
+        description: {
             type: String,
             required: false
         },
-        ownerId:{
+        ownerId: {
             type: String,
-            ref:"User",
+            ref: "User",
             required: true
         },
-        status:{
+        status: {
             type: String,
             enum: ['Active', 'Inactive'],
             default: 'Active'
         },
-        spaceType:{
-            type:String,
-            enum:['Personal','Shared'],
-            required:true
+        spaceType: {
+            type: String,
+            enum: ['Personal', 'Shared'],
+            default: 'Shared'
+        },
+        kind: {
+            type: String,
+            enum: ["OUR_HOME", "BUILDERS_CIRCLE", "STUDIO", "MY_CORNER", "CUSTOM"],
+            default: "CUSTOM"
+        },
+        theme: {
+            preset: {
+                type: String,
+                enum: ["HEARTH", "NEON_GRID", "IVORY_INK", "ORBIT"],
+                default: "ORBIT"
+            },
+            mode: {
+                type: String,
+                enum: ["light", "dark"],
+                default: "dark"
+            }
+        },
+        visibility: {
+            type: String,
+            enum: ["PRIVATE", "UNLISTED", "PUBLIC"],
+            default: "PRIVATE"
+        },
+        joinPolicy: {
+            type: String,
+            enum: ["INVITE_ONLY", "REQUEST", "OPEN"],
+            default: "INVITE_ONLY"
         }
-    },{
+    },
+    {
         timestamps: true
     }
-)
+);
 
-export const Space = model<ISpace>("Space",spaceSchema);
+export const Space = model<ISpace>("Space", spaceSchema);

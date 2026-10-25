@@ -46,3 +46,11 @@ export interface ICreateTask {
   priority?: TaskPriority;
   deadline: Date;
 }
+
+export interface IUpdateTask {
+  title?: string;
+  description?: string;
+  priority?: TaskPriority;
+  deadline?: Date;
+  progressStatus?: TaskProgressStatus;
+}

@@ -1,10 +1,15 @@
 import mongoose, { Schema } from "mongoose";
+import { randomUUID } from "crypto";
 import { ISubtask } from "../types/subTask.types.js";
 
 const subtaskSchema = new Schema<ISubtask>(
   {
+    _id: {
+      type: String,
+      default: () => "Subtask_" + randomUUID(),
+    },
     taskId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: "Task",
       required: true,
     },
@@ -18,6 +23,7 @@ const subtaskSchema = new Schema<ISubtask>(
     description: {
       type: String,
       trim: true,
+      default: "",
     },
 
     assigneeId: {

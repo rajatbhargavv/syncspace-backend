@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { IComment } from "../types/comments.types.js";
+import { IComment } from "../types/comment.types.js";
 import { Schema, model } from "mongoose";
 
 const commentsSchema = new Schema<IComment>(

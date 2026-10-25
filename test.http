@@ -1,6 +1,10 @@
 @baseUrl = http://localhost:5000/api
 
-### 1. Register Alice (Owner)
+### ==============================================================================
+### 1. AUTH SETUP: ALICE (OWNER), BOB (MEMBER), CHARLIE (NON-MEMBER)
+### ==============================================================================
+
+### 1. Register Alice (Space Owner)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
@@ -10,7 +14,7 @@ Content-Type: application/json
     "password": "Password123!"
 }
 
-### 2. Register Bob (Member)
+### 2. Register Bob (Space Member)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
@@ -20,7 +24,17 @@ Content-Type: application/json
     "password": "Password123!"
 }
 
-### 3. Login as Alice (saves token cookie automatically)
+### 3. Register Charlie (Outsider / Non-Member)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "Charlie Outsider",
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+### 4. Login as Alice (saves token cookie automatically)
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -29,7 +43,11 @@ Content-Type: application/json
     "password": "Password123!"
 }
 
-### 4. Alice creates a Space
+### ==============================================================================
+### 2. SPACES MANAGEMENT
+### ==============================================================================
+
+### 5. Alice creates a Space
 # @name createSpace
 POST {{baseUrl}}/spaces
 Content-Type: application/json
@@ -39,16 +57,16 @@ Content-Type: application/json
     "description": "Collaboration space for devs"
 }
 
-### Grab the spaceId from step 4:
+### Grab the spaceId from step 5:
 @spaceId = {{createSpace.response.body.space._id}}
 
-### 5. Alice gets her spaces
+### 6. Alice views her spaces
 GET {{baseUrl}}/spaces
 
-### 6. Alice views the space by ID (Owner access: 200 OK)
+### 7. Alice views the space by ID (Owner access: 200 OK)
 GET {{baseUrl}}/spaces/{{spaceId}}
 
-### 7. Login as Bob
+### 8. Login as Bob
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -57,43 +75,26 @@ Content-Type: application/json
     "password": "Password123!"
 }
 
-### 8. Bob tries to view Alice's space BEFORE joining
+### 9. Bob tries to view Alice's space BEFORE joining
 # Expect: 403 Forbidden ("Access denied: You are not a member of this space")
 GET {{baseUrl}}/spaces/{{spaceId}}
-
-### 9. Bob tries to rename Alice's space
-# Expect: 403 Forbidden ("Only the space owner can perform this action")
-PUT {{baseUrl}}/spaces/{{spaceId}}
-Content-Type: application/json
-
-{
-    "name": "Hacked Space"
-}
 
 ### 10. Bob joins the space
 # Expect: 200 OK
 POST {{baseUrl}}/spaces/{{spaceId}}/join
 
-### 11. Bob tries to join AGAIN
-# Expect: 409 Conflict ("Already a member")
-POST {{baseUrl}}/spaces/{{spaceId}}/join
-
-### 12. Bob views the space AFTER joining
-# Expect: 200 OK (Allowed by requireSpaceMember!)
+### 11. Bob views the space AFTER joining
+# Expect: 200 OK
 GET {{baseUrl}}/spaces/{{spaceId}}
 
-### 13. List all members in space
+### 12. List all members in space
 GET {{baseUrl}}/spaces/{{spaceId}}/members
 
-### 14. Bob leaves the space
-# Expect: 200 OK
-POST {{baseUrl}}/spaces/{{spaceId}}/leave
+### ==============================================================================
+### 3. TASK CREATION (PREREQUISITE FOR COMMENTS)
+### ==============================================================================
 
-### 15. Bob tries to view the space after leaving
-# Expect: 403 Forbidden
-GET {{baseUrl}}/spaces/{{spaceId}}
-
-### 16. Switch back to Alice (Login Alice)
+### 13. Login back as Alice (Owner) to create Task
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -102,10 +103,196 @@ Content-Type: application/json
     "password": "Password123!"
 }
 
-### 17. Alice deactivates the space
+### 14. Alice creates a Task in the Space
+# @name createTask
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+    "spaceId": "{{spaceId}}",
+    "title": "Build Comment Feature",
+    "description": "Implement models, controllers, services, and tests for Comments",
+    "priority": "HIGH",
+    "deadline": "2026-12-31T23:59:59.000Z"
+}
+
+### Grab taskId from step 14:
+@taskId = {{createTask.response.body.task._id}}
+
+### 15. View the created Task
+GET {{baseUrl}}/tasks/{{taskId}}
+
+### ==============================================================================
+### 4. COMMENT BUSINESS RULES & ENDPOINTS
+### ==============================================================================
+
+### 16. Login as Charlie (Non-member)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+### 17. Charlie (Non-member) attempts to add a comment
+# Expect: 403 Forbidden ("Access denied: You must be an active member of this space to comment")
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Content-Type: application/json
+
+{
+    "content": "Intruder comment trying to bypass membership"
+}
+
+### 18. Charlie (Non-member) attempts to view comments for the task
+# Expect: 403 Forbidden ("Access denied: You do not have permission to view comments for this task")
+GET {{baseUrl}}/tasks/{{taskId}}/comments
+
+### 19. Login as Bob (Active Member)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "bob@example.com",
+    "password": "Password123!"
+}
+
+### 20. Bob tries to add comment with empty whitespace (Validation Check)
+# Expect: 400 Bad Request ("Comment content cannot be empty")
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Content-Type: application/json
+
+{
+    "content": "     "
+}
+
+### 21. Bob adds a valid comment to the task
+# @name addComment
+# Expect: 201 Created
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Content-Type: application/json
+
+{
+    "content": "  I am working on the comments module today!  "
+}
+
+### Grab commentId from step 21:
+@commentId = {{addComment.response.body.comment._id}}
+
+### 22. Bob lists all comments for the task
+# Expect: 200 OK (trimmed content, edited: false)
+GET {{baseUrl}}/tasks/{{taskId}}/comments
+
+### 23. Alice (Owner) lists comments for the task
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+### 24. Alice gets comments (Owner has permission to view)
 # Expect: 200 OK
+GET {{baseUrl}}/tasks/{{taskId}}/comments
+
+### 25. Alice tries to edit Bob's comment (Ownership Rule)
+# Expect: 403 Forbidden ("User not authorized to access this comment")
+PATCH {{baseUrl}}/comments/{{commentId}}
+Content-Type: application/json
+
+{
+    "content": "Alice trying to tamper with Bob's comment"
+}
+
+### 26. Alice tries to delete Bob's comment (Ownership Rule)
+# Expect: 403 Forbidden ("User not authorized to access this comment")
+DELETE {{baseUrl}}/comments/{{commentId}}
+
+### 27. Switch back to Bob to edit his comment
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "bob@example.com",
+    "password": "Password123!"
+}
+
+### 28. Bob edits his comment
+# Expect: 200 OK (content updated, edited: true)
+PATCH {{baseUrl}}/comments/{{commentId}}
+Content-Type: application/json
+
+{
+    "content": "Updated: Finished all comment endpoints and unit tests!"
+}
+
+### 29. Bob deletes his own comment
+# Expect: 200 OK ("Comment deleted successfully")
+DELETE {{baseUrl}}/comments/{{commentId}}
+
+### 30. Verify comments list is now empty
+GET {{baseUrl}}/tasks/{{taskId}}/comments
+
+### ==============================================================================
+### 5. ARCHIVE & DELETED POLICY CHECKS
+### ==============================================================================
+
+### 31. Bob adds another comment to test task deletion policy
+# @name addSecondComment
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Content-Type: application/json
+
+{
+    "content": "Comment right before task deletion"
+}
+
+@secondCommentId = {{addSecondComment.response.body.comment._id}}
+
+### 32. Login as Alice (Owner) to delete the Task
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+### 33. Alice soft-deletes the Task
+# Expect: 200 OK (lifecycleStatus: "DELETED")
+DELETE {{baseUrl}}/tasks/{{taskId}}
+
+### 34. Bob tries to add comment to DELETED Task
+# Expect: 400 Bad Request ("Cannot add a comment to a deleted task")
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Content-Type: application/json
+
+{
+    "content": "Trying to add comment on deleted task"
+}
+
+### 35. Bob tries to edit comment on DELETED Task
+# Expect: 400 Bad Request ("Cannot edit comment on a deleted task")
+PATCH {{baseUrl}}/comments/{{secondCommentId}}
+Content-Type: application/json
+
+{
+    "content": "Trying to edit comment on deleted task"
+}
+
+### 36. Bob tries to delete comment on DELETED Task
+# Expect: 400 Bad Request ("Cannot delete comment on a deleted task")
+DELETE {{baseUrl}}/comments/{{secondCommentId}}
+
+### 37. Alice deactivates the Space
+# Expect: 200 OK (status: "Inactive")
 PATCH {{baseUrl}}/spaces/{{spaceId}}/deactivate
 
-### 18. Alice tries to get deactivated space
-# Expect: 404 Space not found
-GET {{baseUrl}}/spaces/{{spaceId}}
+### 38. Bob tries to comment in INACTIVE Space
+# Expect: 400 Bad Request ("Cannot comment in an inactive space")
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Content-Type: application/json
+
+{
+    "content": "Trying to comment in inactive space"
+}

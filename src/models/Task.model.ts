@@ -1,4 +1,5 @@
-import mongoose, { Document, Schema, Types } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import { randomUUID } from "crypto";
 import { ITask } from "../types/task.types.js";
 import { randomUUID } from "crypto";
 const taskSchema = new Schema<ITask>(
@@ -7,6 +8,7 @@ const taskSchema = new Schema<ITask>(
       type: String,
       default: () => "Task_" + randomUUID(),
     },
+
     spaceId: {
       type: String,
       ref: "Space",

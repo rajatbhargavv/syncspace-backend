@@ -1,14 +1,15 @@
 import { getSpaceMembers, joinSpace, leaveSpace, removeMember } from "../services/spaceMember.service.js";
 import { Request , Response, NextFunction } from 'express';
-export async function handleJoinSpace(req:Request,res:Response){
-    const userId:String=req.user!.id
-    const spaceId:String=req.params.id as string;
-    const member=await joinSpace(spaceId,userId)
+export async function handleJoinSpace(req: Request, res: Response){
+    const userId: string = req.user!.id;
+    const spaceId: string = req.params.id as string;
+    const member = await joinSpace(spaceId, userId);
     return res.status(200).json({
-        message:"Successfully joined the space",
+        message: "Successfully joined the space",
         member
-    })
+    });
 }
+
 export async function handleLeaveSpace(req: Request, res: Response) {
   const userId: string = req.user!.id;
   const spaceId: string = req.params.id as string;
@@ -20,6 +21,7 @@ export async function handleLeaveSpace(req: Request, res: Response) {
     member
   });
 }
+
 export async function handleRemoveMember(req: Request, res: Response) {
   const ownerId: string = req.user!.id;
   const spaceId: string = req.params.id as string;
@@ -32,6 +34,7 @@ export async function handleRemoveMember(req: Request, res: Response) {
     member
   });
 }
+
 export async function handleGetSpaceMembers(req: Request, res: Response) {
   const spaceId: string = req.params.id as string;
 

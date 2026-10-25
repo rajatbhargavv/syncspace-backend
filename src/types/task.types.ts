@@ -1,5 +1,3 @@
-import { Types } from "mongoose";
-
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
 export type TaskProgressStatus =
@@ -15,15 +13,15 @@ export type AssigneeStatus =
   | "DONE";
 
 export interface ITaskAssignee {
-  userId: Types.ObjectId;
+  userId: string;
   status: AssigneeStatus;
 }
 
 export interface ITask {
-  _id: Types.ObjectId;
+  _id: string;
 
-  spaceId: Types.ObjectId;
-  createdBy: Types.ObjectId;
+  spaceId: string;
+  createdBy: string;
 
   title: string;
   description?: string;
@@ -38,4 +36,13 @@ export interface ITask {
 
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ICreateTask {
+  spaceId: string;
+  createdBy: string;
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  deadline: Date;
 }

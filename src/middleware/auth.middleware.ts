@@ -1,12 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken"
 import AppError from "../utils/AppError.js";
-import { SECRET_KEY_ACCESS, SECRET_KEY_REFRESH,NODE_ENV } from "../config/env.js";
-export function authMiddleware(req:Request,res:Response,next:NextFunction){
-    try{
-    let accessToken = req.cookies?.accessToken;
-    if(!accessToken && req.headers.authorization?.startsWith("Bearer")){
-        accessToken = req.headers.authorization.split(" ")[1];
+import { SECRET_KEY_ACCESS } from "../config/env.js";
+
+export function requireAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    let token = req.cookies?.token;
+    if (!token && req.headers.authorization?.startsWith("Bearer")) {
+      token = req.headers.authorization.split(" ")[1];
     }
     if (!accessToken) {
       throw new AppError("Not Authorized",401)

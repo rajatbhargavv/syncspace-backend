@@ -17,7 +17,7 @@ const spaceSchema = new Schema<ISpace>(
             type: String,
             required: false
         },
-        ownerID:{
+        ownerId:{
             type: String,
             ref:"User",
             required: true

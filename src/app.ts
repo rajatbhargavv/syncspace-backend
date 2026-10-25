@@ -3,7 +3,6 @@ import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes.js";
 import spaceRouter from "./routes/space.routes.js";
 import spaceMemberRouter from "./routes/spaceMember.routes.js";
-import commentRouter from "./routes/comments.routes.js";
 import userRouter from "./routes/user.routes.js";
 import taskRouter from "./routes/task.routes.js";
 import commentRouter from "./routes/comment.routes.js";

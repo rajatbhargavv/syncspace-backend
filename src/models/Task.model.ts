@@ -1,7 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { randomUUID } from "crypto";
 import { ITask } from "../types/task.types.js";
-import { randomUUID } from "crypto";
 const taskSchema = new Schema<ITask>(
   {
     _id: {

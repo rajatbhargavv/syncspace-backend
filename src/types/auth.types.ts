@@ -1,5 +1,9 @@
-interface ILogin{
-    email:string,
-    password:string
+export interface ILogin {
+  email: string;
+  password: string;
 }
-export {ILogin}
+
+export interface IAuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}

@@ -26,9 +26,12 @@ export function requireAuth(
     }
     req.user = { id: decoded.id };
     next();
-  } catch (err) {
+  } catch (err: any) {
     if (err instanceof AppError) {
       return next(err);
+    }
+    if (err?.name === "TokenExpiredError") {
+      return next(new AppError("Token expired", 401));
     }
     return next(new AppError("Not Authorized", 401));
   }

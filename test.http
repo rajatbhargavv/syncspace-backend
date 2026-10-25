@@ -296,3 +296,28 @@ Content-Type: application/json
 {
     "content": "Trying to comment in inactive space"
 }
+
+### ==============================================================================
+### 6. REFRESH TOKEN & LOGOUT LIFECYCLE
+### ==============================================================================
+
+### 39. Login as Charlie to get new tokens
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+### 40. Charlie refreshes access token using refreshToken cookie
+# Expect: 200 OK (new accessToken + new rotated refreshToken)
+POST {{baseUrl}}/auth/refresh
+
+### 41. Charlie logs out (clears cookies and revokes refreshToken in DB)
+# Expect: 200 OK
+POST {{baseUrl}}/auth/logout
+
+### 42. Charlie tries to refresh token after logout
+# Expect: 401 Unauthorized ("Invalid or revoked refresh token")
+POST {{baseUrl}}/auth/refresh

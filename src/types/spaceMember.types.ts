@@ -4,7 +4,7 @@ interface ISpaceMember {
   _id: Types.ObjectId;
   spaceId: string;
   userId: string;
-  status: "ACTIVE" | "INACTIVE";
+  status: "ACTIVE" | "INACTIVE" | "PENDING";
   joinedAt: Date;
 }
 

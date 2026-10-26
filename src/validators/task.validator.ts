@@ -1,12 +1,9 @@
 import Joi from "joi";
 
-// ------------------------------
-// Common validation rules
-// ------------------------------
-
-const objectId = Joi.string()
-    .hex()
-    .length(24);
+const entityId = Joi.string()
+    .trim()
+    .min(1)
+    .max(200);
 
 const priority = Joi.string()
     .valid("LOW", "MEDIUM", "HIGH", "URGENT");
@@ -17,25 +14,19 @@ const progressStatus = Joi.string()
 const assigneeStatus = Joi.string()
     .valid("TODO", "IN_PROGRESS", "DONE");
 
-// ------------------------------
-// Assignee schema
-// ------------------------------
 
 const assigneeSchema = Joi.object({
-    userId: objectId.required(),
+    userId: entityId.required(),
     status: assigneeStatus.optional()
 }).unknown(false);
 
 const assigneeInputSchema = Joi.object({
-    userId: objectId.required()
+    userId: entityId.required()
 }).unknown(false);
 
-// ------------------------------
-// Create Task
-// ------------------------------
 
 const taskSchema = Joi.object({
-    spaceId: objectId.required(),
+    spaceId: entityId.required(),
 
     title: Joi.string()
         .trim()
@@ -63,9 +54,6 @@ const taskSchema = Joi.object({
 })
     .unknown(false);
 
-// ------------------------------
-// Update Task Details
-// ------------------------------
 
 const updateTaskSchema = Joi.object({
     title: Joi.string()
@@ -89,9 +77,6 @@ const updateTaskSchema = Joi.object({
     .min(1)
     .unknown(false);
 
-// ------------------------------
-// Assign / Reassign Assignees
-// ------------------------------
 
 const assignTaskSchema = Joi.object({
     assignees: Joi.array()
@@ -102,21 +87,15 @@ const assignTaskSchema = Joi.object({
 })
     .unknown(false);
 
-// ------------------------------
-// Update own assignment status
-// ------------------------------
 
 const updateAssigneeStatusSchema = Joi.object({
     status: assigneeStatus.required()
 })
     .unknown(false);
 
-// ------------------------------
-// Task filters and pagination
-// ------------------------------
 
 const taskQuerySchema = Joi.object({
-    spaceId: objectId.optional(),
+    spaceId: entityId.optional(),
 
     priority: priority.optional(),
 
@@ -126,9 +105,9 @@ const taskQuerySchema = Joi.object({
         .valid("ACTIVE", "DELETED")
         .optional(),
 
-    assignedTo: objectId.optional(),
+    assignedTo: entityId.optional(),
 
-    createdBy: objectId.optional(),
+    createdBy: entityId.optional(),
 
     search: Joi.string()
         .trim()
@@ -156,9 +135,6 @@ const taskQuerySchema = Joi.object({
 })
     .unknown(false);
 
-// ------------------------------
-// Export schemas
-// ------------------------------
 
 export {
     taskSchema,

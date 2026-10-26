@@ -3,51 +3,20 @@ import { Space } from "../models/Space.model.js";
 import { SpaceMember } from "../models/SpaceMember.model.js";
 
 import Task from "../models/Task.model.js";
+import type {
+    AssigneeStatus,
+    ICreateTask,
+    ITaskAssigneeInput,
+    ITaskFilters,
+    IUpdateTask,
+    TaskSortField,
+} from "../types/task.types.js";
 import {
     getSpaceById,
 } from "./space.service.js";
 import { getSpaceMembers as getMembers } from "./spaceMember.service.js";
 
 import AppError from "../utils/AppError.js";
-
-// --------------------------------------------------
-// Types for Task service inputs
-// --------------------------------------------------
-
-interface ITaskAssigneeInput {
-    userId: string;
-}
-
-interface ICreateTask {
-    spaceId: string;
-    createdBy: string;
-    title: string;
-    description?: string;
-    priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-    deadline: Date | string;
-    assignees: ITaskAssigneeInput[];
-}
-
-interface IUpdateTask {
-    title?: string;
-    description?: string;
-    priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-    deadline?: Date | string;
-}
-
-interface ITaskFilters {
-    spaceId?: string;
-    priority?: string;
-    progressStatus?: string;
-    lifecycleStatus?: "ACTIVE" | "DELETED";
-    assignedTo?: string;
-    createdBy?: string;
-    search?: string;
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: "asc" | "desc";
-}
 
 // --------------------------------------------------
 // Helpers
@@ -266,17 +235,16 @@ export const getTasks = async (
         Math.max(1, Number(filters.limit ?? 20))
     );
 
-    const allowedSortFields = [
+    const allowedSortFields: TaskSortField[] = [
         "createdAt",
         "updatedAt",
         "deadline",
         "priority",
     ];
 
-    const sortBy = allowedSortFields.includes(
-        filters.sortBy ?? ""
-    )
-        ? filters.sortBy!
+    const sortBy = filters.sortBy &&
+        allowedSortFields.includes(filters.sortBy)
+        ? filters.sortBy
         : "createdAt";
 
     const sortOrder = filters.sortOrder === "asc" ? 1 : -1;
@@ -430,7 +398,7 @@ export const updateAssigneeStatus = async (
     userId: string,
     taskId: string,
     assigneeId: string,
-    status: "TODO" | "IN_PROGRESS" | "DONE"
+    status: AssigneeStatus
 ) => {
     if (userId !== assigneeId) {
         throw new AppError(

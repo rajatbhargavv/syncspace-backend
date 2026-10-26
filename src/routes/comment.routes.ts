@@ -4,6 +4,7 @@ import {
   handleCreateComment,
   handleDeleteComment,
   handleGetComments,
+  handleGetTaskTimeline,
   handleUpdateComment,
 } from "../controllers/comment.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
@@ -25,6 +26,12 @@ commentRouter.post(
 commentRouter.get(
   "/tasks/:taskId/comments",
   asyncHandler(handleGetComments)
+);
+
+// GET /api/tasks/:taskId/timeline - Task timeline
+commentRouter.get(
+  "/tasks/:taskId/timeline",
+  asyncHandler(handleGetTaskTimeline)
 );
 
 // PATCH /api/comments/:commentId - Edit your comment

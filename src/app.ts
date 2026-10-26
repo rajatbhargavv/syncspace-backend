@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import errorHandler from "./middleware/error.middleware.js";
 import spaceMemberRouter from "./routes/spaceMember.routes.js";
 import commentRouter from "./routes/comments.routes.js";
+import taskRouter from "./routes/task.routes.js";
 
 const app=express();
 app.use(express.json());
@@ -15,5 +16,6 @@ app.use("/api/auth",authRouter);
 app.use("/api/spaces", spaceRouter);
 app.use("/api/spaces", spaceMemberRouter);
 app.use("/api/comments", commentRouter);
+app.use("/api/tasks", taskRouter);
 app.use(errorHandler);
 export default app;

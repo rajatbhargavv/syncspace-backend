@@ -1,5 +1,3 @@
-import { Types } from "mongoose";
-
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
 export type TaskProgressStatus =
@@ -14,16 +12,59 @@ export type AssigneeStatus =
   | "IN_PROGRESS"
   | "DONE";
 
+export type TaskSortField =
+  | "createdAt"
+  | "updatedAt"
+  | "deadline"
+  | "priority";
+
+export type TaskSortOrder = "asc" | "desc";
+
 export interface ITaskAssignee {
-  userId: Types.ObjectId;
+  userId: string;
   status: AssigneeStatus;
 }
 
-export interface ITask {
-  _id: Types.ObjectId;
+export interface ITaskAssigneeInput {
+  userId: string;
+}
 
-  spaceId: Types.ObjectId;
-  createdBy: Types.ObjectId;
+export interface ICreateTask {
+  spaceId: string;
+  createdBy: string;
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  deadline: Date | string;
+  assignees: ITaskAssigneeInput[];
+}
+
+export interface IUpdateTask {
+  title?: string;
+  description?: string;
+  priority?: TaskPriority;
+  deadline?: Date | string;
+}
+
+export interface ITaskFilters {
+  spaceId?: string;
+  priority?: TaskPriority;
+  progressStatus?: TaskProgressStatus;
+  lifecycleStatus?: TaskLifecycleStatus;
+  assignedTo?: string;
+  createdBy?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: TaskSortField;
+  sortOrder?: TaskSortOrder;
+}
+
+export interface ITask {
+  _id: string;
+
+  spaceId: string;
+  createdBy: string;
 
   title: string;
   description?: string;

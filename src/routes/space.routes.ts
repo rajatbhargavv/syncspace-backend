@@ -9,7 +9,8 @@ import {
     handleGetMySpaces, 
     handleGetSpaceById, 
     handleGetPublicSpace,
-    handleUpdateSpace 
+    handleUpdateSpace, 
+    handleSearchSpaceMembers
 } from "../controllers/space.controller.js";
 import { handleGetSpaceTasks } from "../controllers/task.controller.js";
 import { handleGetSpaceAnalytics } from "../controllers/analytics.controller.js";
@@ -32,6 +33,7 @@ spaceRouter.use(requireAuth);
 // Join via invite token (auth required, activates membership regardless of joinPolicy)
 spaceRouter.post("/join/:token", asyncHandler(handleJoinSpaceByInvite));
 
+spaceRouter.get("/:id/members/search",asyncHandler(handleSearchSpaceMembers))
 // 1. Create space
 spaceRouter.post("/", validate(spaceSchema), asyncHandler(handleCreateSpace));
 

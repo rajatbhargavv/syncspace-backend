@@ -12,6 +12,7 @@ export interface ICreateComment {
     taskId: string;
     userId: string;
     content: string;
+    mentionedIds?:string[]
 }
 
 export interface IUpdateComment {

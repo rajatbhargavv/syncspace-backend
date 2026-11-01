@@ -16,10 +16,12 @@ export async function handleCreateComment(req: Request, res: Response, next: Nex
         throw new AppError("TaskId is required", 400);
     }
     const content = req.body.content;
+    const mentionedIds=req.body.mentionedIds;
     const addData: ICreateComment = {
         userId,
         taskId,
-        content
+        content,
+        mentionedIds
     };
     const comment = await createComment(addData);
     return res.status(201).json({

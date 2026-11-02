@@ -54,7 +54,10 @@ Content-Type: application/json
 
 {
     "name": "SyncSpace Dev Team",
-    "description": "Collaboration space for devs"
+    "description": "Collaboration space for devs",
+    "kind": "BUILDERS_CIRCLE",
+    "visibility": "PUBLIC",
+    "joinPolicy": "OPEN"
 }
 
 ### Grab the spaceId from step 5:
@@ -321,3 +324,358 @@ POST {{baseUrl}}/auth/logout
 ### 42. Charlie tries to refresh token after logout
 # Expect: 401 Unauthorized ("Invalid or revoked refresh token")
 POST {{baseUrl}}/auth/refresh
+
+
+### ==============================================================================
+### 7. NEW SPACES ENDPOINTS & JOIN POLICIES
+### ==============================================================================
+
+### 43. Public Space view (no auth needed)
+# Expect: 200 OK (safe fields + owner name + contributor stats)
+GET {{baseUrl}}/spaces/public/{{spaceId}}
+
+### 44. Alice logs back in
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+### 45. Alice creates an INVITE_ONLY space
+# @name createInviteOnlySpace
+POST {{baseUrl}}/spaces
+Content-Type: application/json
+
+{
+    "name": "Secret Project",
+    "description": "Invite only space",
+    "kind": "STUDIO",
+    "visibility": "PRIVATE",
+    "joinPolicy": "INVITE_ONLY"
+}
+
+@inviteSpaceId = {{createInviteOnlySpace.response.body.space._id}}
+
+### 46. Login as Charlie (outsider)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+### 47. Charlie tries to join INVITE_ONLY space directly
+# Expect: 403 Forbidden ("This space is invite only")
+POST {{baseUrl}}/spaces/{{inviteSpaceId}}/join
+
+### 47a. Alice creates an invite link for the INVITE_ONLY space
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+# @name createInvite
+POST {{baseUrl}}/spaces/{{inviteSpaceId}}/invites
+Content-Type: application/json
+
+{
+    "expiresInHours": 24,
+    "maxUses": 5
+}
+
+@inviteToken = {{createInvite.response.body.token}}
+
+### 47b. Preview invite link (no auth required)
+# Expect: 200 OK (name, kind, theme, ownerName)
+GET {{baseUrl}}/spaces/invite/{{inviteToken}}/preview
+
+### 47c. Charlie joins INVITE_ONLY space via invite token
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+# Expect: 200 OK (activates membership regardless of joinPolicy)
+POST {{baseUrl}}/spaces/join/{{inviteToken}}
+
+### 48. Alice creates a REQUEST policy space
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+# @name createRequestSpace
+POST {{baseUrl}}/spaces
+Content-Type: application/json
+
+{
+    "name": "Request To Join Space",
+    "description": "Requires approval",
+    "kind": "OUR_HOME",
+    "visibility": "PUBLIC",
+    "joinPolicy": "REQUEST"
+}
+
+@requestSpaceId = {{createRequestSpace.response.body.space._id}}
+
+### 49. Charlie requests to join REQUEST space
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+# Expect: 200 OK (member status: "PENDING")
+POST {{baseUrl}}/spaces/{{requestSpaceId}}/join
+
+### 50. Alice views PENDING member requests (owner only)
+# Expect: 200 OK (returns array of pending requests with user {_id, name})
+GET {{baseUrl}}/spaces/{{requestSpaceId}}/members?status=PENDING
+
+### 50a. Charlie (non-owner) tries to view PENDING requests
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+# Expect: 403 Forbidden ("Only the space owner can view pending requests")
+GET {{baseUrl}}/spaces/{{requestSpaceId}}/members?status=PENDING
+
+### 50b. Login back as Alice
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+# Charlie's user ID for approval
+@charlieUserId = {{charlieUserId}}
+
+### 51. Alice approves Charlie's join request
+POST {{baseUrl}}/spaces/{{requestSpaceId}}/members/{{charlieUserId}}/approve
+
+### ==============================================================================
+### 8. TASKS & ASSIGNEES ENDPOINTS
+### ==============================================================================
+
+### 52. Alice creates a new Active Task in requestSpace
+# @name createActiveTask
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+    "spaceId": "{{requestSpaceId}}",
+    "title": "Build Realtime Dashboard",
+    "description": "WebSocket integration and chart components",
+    "priority": "HIGH",
+    "deadline": "2026-11-30T23:59:59.000Z"
+}
+
+@newTaskId = {{createActiveTask.response.body.task._id}}
+
+### 53. Filter space tasks
+# Expect: 200 OK with filtered tasks
+GET {{baseUrl}}/spaces/{{requestSpaceId}}/tasks?status=TODO&priority=HIGH
+
+### 54. PATCH task details
+# Expect: 200 OK (updated title & progressStatus)
+PATCH {{baseUrl}}/tasks/{{newTaskId}}
+Content-Type: application/json
+
+{
+    "title": "Build Realtime Dashboard v2",
+    "progressStatus": "IN_PROGRESS"
+}
+
+### 55. Assign Charlie to the task
+# Expect: 200 OK (assignee added)
+POST {{baseUrl}}/tasks/{{newTaskId}}/assignees
+Content-Type: application/json
+
+{
+    "userId": "{{charlieUserId}}"
+}
+
+### 56. Login as Charlie to update own assignee status
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+### 57. Charlie updates his own assignee status to DONE
+# Expect: 200 OK
+PATCH {{baseUrl}}/tasks/{{newTaskId}}/assignees/me
+Content-Type: application/json
+
+{
+    "status": "DONE"
+}
+
+### 58. Switch to Alice to remove Charlie from assignees
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+DELETE {{baseUrl}}/tasks/{{newTaskId}}/assignees/{{charlieUserId}}
+
+### ==============================================================================
+### 9. SUBTASKS ENDPOINTS
+### ==============================================================================
+
+### 59. Alice creates a subtask for the task
+# @name createSubtask
+POST {{baseUrl}}/tasks/{{newTaskId}}/subtasks
+Content-Type: application/json
+
+{
+    "title": "Setup Socket.io listeners",
+    "description": "Add client handlers for events",
+    "assigneeId": "{{charlieUserId}}",
+    "priority": "HIGH",
+    "deadline": "2026-11-15T23:59:59.000Z"
+}
+
+@subtaskId = {{createSubtask.response.body.subtask._id}}
+
+### 60. List subtasks for the task
+GET {{baseUrl}}/tasks/{{newTaskId}}/subtasks
+
+### 61. Charlie updates subtask status to DONE
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "charlie@example.com",
+    "password": "Password123!"
+}
+
+PATCH {{baseUrl}}/subtasks/{{subtaskId}}
+Content-Type: application/json
+
+{
+    "status": "DONE"
+}
+
+### 62. Delete subtask
+DELETE {{baseUrl}}/subtasks/{{subtaskId}}
+
+### ==============================================================================
+### 10. MENTIONS & TIMELINE (GITHUB-PR STYLE)
+### ==============================================================================
+
+### 63. Charlie comments with @Alice mention
+# Expect: 201 Created and Alice receives a TASK_COMMENT notification
+POST {{baseUrl}}/tasks/{{newTaskId}}/comments
+Content-Type: application/json
+
+{
+    "content": "Hey @Alice Owner can you review the dashboard changes?"
+}
+
+### 64. View merged Task Timeline (comments + activity events sorted chronologically)
+# Expect: 200 OK with items tagged kind: "comment" | "event"
+GET {{baseUrl}}/tasks/{{newTaskId}}/timeline
+
+### ==============================================================================
+### 11. USERS & PROFILES
+### ==============================================================================
+
+### 65. Get my own user info (safe fields + email + plan)
+GET {{baseUrl}}/users/me
+
+### 66. Get another user by ID (safe fields only: _id, name, createdAt - NO email)
+GET {{baseUrl}}/users/{{charlieUserId}}
+
+### 67. Get public user profile with contribution stats
+# Expect: 200 OK (name, joinedAt, PUBLIC spaces with role and stats)
+GET {{baseUrl}}/users/{{charlieUserId}}/profile
+
+### ==============================================================================
+### 12. NOTIFICATIONS
+### ==============================================================================
+
+### 68. Login as Alice to check notifications (she was mentioned and task was assigned)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "password": "Password123!"
+}
+
+### 69. Get unread notification count
+GET {{baseUrl}}/notifications/unread-count
+
+### 70. Get notifications list
+# @name listNotifications
+GET {{baseUrl}}/notifications?unread=true&page=1&limit=20
+
+@notificationId = {{listNotifications.response.body.notifications[0]._id}}
+
+### 71. Mark single notification as read
+PATCH {{baseUrl}}/notifications/{{notificationId}}/read
+
+### 72. Mark all notifications as read
+PATCH {{baseUrl}}/notifications/read-all
+
+### ==============================================================================
+### 13. PREMIUM / ANALYTICS
+### ==============================================================================
+
+### 73. Alice attempts to view analytics on FREE plan
+# Expect: 402 Payment Required ("Analytics requires a PRO subscription plan")
+GET {{baseUrl}}/spaces/{{requestSpaceId}}/analytics?range=7d
+
+### 74. Alice flips plan to PRO (dev-only toggle)
+# Expect: 200 OK (plan updated to PRO)
+PATCH {{baseUrl}}/users/plan
+Content-Type: application/json
+
+{
+    "plan": "PRO"
+}
+
+### 75. Alice views space analytics on PRO plan
+# Expect: 200 OK (tasks completed per day, completion by member, on-time rate, workload, overdue count)
+GET {{baseUrl}}/spaces/{{requestSpaceId}}/analytics?range=7d
+
+### 75a. Bob (a member on FREE plan) views space analytics
+# Expect: 200 OK because the SPACE OWNER (Alice) is on PRO plan!
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "bob@example.com",
+    "password": "Password123!"
+}
+
+GET {{baseUrl}}/spaces/{{requestSpaceId}}/analytics?range=7d
+
+### 76. Alice views 30-day analytics
+GET {{baseUrl}}/spaces/{{requestSpaceId}}/analytics?range=30d

@@ -3,10 +3,14 @@ import {
   deleteUser,
   getCurrentUser,
   getUserById,
+  getUserProfile,
   updateUser,
+  updateUserPlan,
 } from "../services/user.service.js";
 import AppError from "../utils/AppError.js";
-import { IUpdateUser } from "../types/user.types.js";
+import { IUpdateUser, UserPlan } from "../types/user.types.js";
+import { NODE_ENV } from "../config/env.js";
+
 export async function handleGetCurrentUser(req: Request, res: Response) {
   const userId = req.user?.id;
   if (!userId) {
@@ -18,6 +22,7 @@ export async function handleGetCurrentUser(req: Request, res: Response) {
     message: "User fetched successfully",
   });
 }
+
 export async function handleUpdateUser(req: Request, res: Response) {
   const userId = req.user?.id;
   if (!userId) {
@@ -30,6 +35,7 @@ export async function handleUpdateUser(req: Request, res: Response) {
     message: "User updated successfully",
   });
 }
+
 export async function handleGetUserById(req: Request, res: Response) {
   const id = req.params?.id;
   if (!id || typeof id !== "string") {
@@ -41,6 +47,38 @@ export async function handleGetUserById(req: Request, res: Response) {
     message: "User fetched successfully",
   });
 }
+
+export async function handleGetUserProfile(req: Request, res: Response) {
+  const id = req.params?.id;
+  if (!id || typeof id !== "string") {
+    throw new AppError("Valid Id must be provided", 400);
+  }
+  const profile = await getUserProfile(id);
+  return res.status(200).json({
+    message: "User profile fetched successfully",
+    profile,
+  });
+}
+
+export async function handleUpdateUserPlan(req: Request, res: Response) {
+  if (NODE_ENV === "production") {
+    throw new AppError("Not found", 404);
+  }
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new AppError("Not authorized", 401);
+  }
+  const plan = req.body.plan as UserPlan;
+  if (!plan || (plan !== "FREE" && plan !== "PRO")) {
+    throw new AppError("Plan must be either 'FREE' or 'PRO'", 400);
+  }
+  const user = await updateUserPlan(userId, plan);
+  return res.status(200).json({
+    message: "User plan updated successfully (dev-only toggle)",
+    user,
+  });
+}
+
 export async function handleDeletetUser(req: Request, res: Response) {
   const id = req.user?.id;
   if (!id) {

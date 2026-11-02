@@ -1,26 +1,135 @@
-import { queryObjects } from "node:v8";
 import User from "../models/User.model.js";
-import { IUpdateUser } from "../types/user.types.js";
+import { IUpdateUser, UserPlan } from "../types/user.types.js";
 import AppError from "../utils/AppError.js";
 import bcrypt from "bcrypt";
 import { Space } from "../models/Space.model.js";
 import { SpaceMember } from "../models/SpaceMember.model.js";
 import Task from "../models/Task.model.js";
-import Subtask from "../models/SubTask.model.js";
+
 export async function getCurrentUser(userId: string) {
-  const exists = await User.findById(userId);
+  const exists = await User.findById(userId).select("_id name email plan createdAt");
   if (!exists) {
     throw new AppError("No such user exists", 404);
   }
   return exists;
 }
+
 export async function getUserById(userId: string) {
-  const exists = await User.findById(userId);
+  const exists = await User.findById(userId).select("_id name createdAt");
   if (!exists) {
     throw new AppError("No such user exists", 404);
   }
   return exists;
 }
+
+export async function getUserProfile(userId: string) {
+  const user = await User.findById(userId).select("_id name createdAt");
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  // Find PUBLIC spaces owned by this user
+  const ownedSpaces = await Space.find({
+    ownerId: userId,
+    visibility: "PUBLIC",
+    status: "Active",
+  }).lean();
+
+  // Find PUBLIC spaces where user is an active member
+  const memberships = await SpaceMember.find({
+    userId,
+    status: "ACTIVE",
+  }).lean();
+  const memberSpaceIds = memberships.map((m) => m.spaceId);
+
+  const memberSpaces = await Space.find({
+    _id: { $in: memberSpaceIds },
+    ownerId: { $ne: userId },
+    visibility: "PUBLIC",
+    status: "Active",
+  }).lean();
+
+  const spacesList: Array<{
+    _id: string;
+    name: string;
+    description?: string;
+    role: "OWNER" | "MEMBER";
+    stats: {
+      tasksCompleted: number;
+      contributionShare: number; // percentage
+    };
+  }> = [];
+
+  for (const space of ownedSpaces) {
+    const totalCompletedInSpace = await Task.countDocuments({
+      spaceId: space._id,
+      lifecycleStatus: "ACTIVE",
+      progressStatus: "COMPLETED",
+    });
+
+    const userCompleted = await Task.countDocuments({
+      spaceId: space._id,
+      lifecycleStatus: "ACTIVE",
+      $or: [
+        { assignees: { $elemMatch: { userId, status: "DONE" } } },
+        { progressStatus: "COMPLETED", createdBy: userId },
+      ],
+    });
+
+    const contributionShare =
+      totalCompletedInSpace > 0
+        ? Math.round((userCompleted / totalCompletedInSpace) * 100)
+        : 0;
+
+    spacesList.push({
+      _id: space._id,
+      name: space.name,
+      description: space.description,
+      role: "OWNER",
+      stats: {
+        tasksCompleted: userCompleted,
+        contributionShare,
+      },
+    });
+  }
+
+  for (const space of memberSpaces) {
+    const totalCompletedInSpace = await Task.countDocuments({
+      spaceId: space._id,
+      lifecycleStatus: "ACTIVE",
+      progressStatus: "COMPLETED",
+    });
+
+    const userCompleted = await Task.countDocuments({
+      spaceId: space._id,
+      lifecycleStatus: "ACTIVE",
+      assignees: { $elemMatch: { userId, status: "DONE" } },
+    });
+
+    const contributionShare =
+      totalCompletedInSpace > 0
+        ? Math.round((userCompleted / totalCompletedInSpace) * 100)
+        : 0;
+
+    spacesList.push({
+      _id: space._id,
+      name: space.name,
+      description: space.description,
+      role: "MEMBER",
+      stats: {
+        tasksCompleted: userCompleted,
+        contributionShare,
+      },
+    });
+  }
+
+  return {
+    name: user.name,
+    joinedAt: user.createdAt,
+    spaces: spacesList,
+  };
+}
+
 export async function deleteUser(userId: string) {
   const exists = await User.findById(userId);
   if (!exists) {
@@ -30,8 +139,8 @@ export async function deleteUser(userId: string) {
     throw new AppError("User is already deleted", 409);
   }
   const spaces = await Space.find({ ownerId: userId });
-  for( const space of spaces) {
-    if (space.spaceType === "Shared" ) {
+  for (const space of spaces) {
+    if (space.spaceType === "Shared") {
       const members = await SpaceMember.find({
         spaceId: space._id,
         status: "ACTIVE",
@@ -48,13 +157,14 @@ export async function deleteUser(userId: string) {
           userId: newOwner.userId,
         });
       }
-    } else{
+    } else {
       await Space.deleteOne({ _id: space._id });
     }
-  };
+  }
   await User.updateOne({ _id: userId }, { isDeleted: true });
   return;
 }
+
 export async function updateUser(userId: string, updateData: IUpdateUser) {
   const exists = await User.findById(userId);
   if (!exists) {
@@ -80,11 +190,27 @@ export async function updateUser(userId: string, updateData: IUpdateUser) {
     }
     details["email"] = updateData.email;
   }
-  if (Object.keys(details).length == 0) {
-    throw new AppError("Their is no Change", 400);
+  if (updateData.plan) {
+    details["plan"] = updateData.plan;
+  }
+  if (Object.keys(details).length === 0) {
+    throw new AppError("There is no change", 400);
   }
   return await User.findOneAndUpdate({ _id: userId }, details, {
     runValidators: true,
     new: true,
-  });
+  }).select("_id name email plan createdAt");
+}
+
+export async function updateUserPlan(userId: string, plan: UserPlan) {
+  // TODO: Production Billing Integration (Stripe / Paddle webhook integration)
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { plan },
+    { new: true, runValidators: true }
+  ).select("_id name email plan createdAt");
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+  return user;
 }

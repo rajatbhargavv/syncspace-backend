@@ -26,14 +26,19 @@ const userSchema = new Schema<IUser>(
       required: true,
       select: false,
     },
-    isDeleted:{
-      type:Boolean,
-      default:false
+    plan: {
+      type: String,
+      enum: ["FREE", "PRO"],
+      default: "FREE",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
     refreshToken: {
-      type:String,
-      select:false
-    }
+      type: String,
+      select: false,
+    },
   },
   {
     timestamps: true,

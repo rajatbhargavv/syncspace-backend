@@ -1,6 +1,7 @@
 export type NotificationType =
   | "TASK_COMMENT"
   | "TASK_CREATED"
+  | "TASK_COMPLETED"
   | "SPACE_MEMBER_JOINED"
   | "SPACE_MEMBER_LEFT"
   | "SUBTASK_CREATED"

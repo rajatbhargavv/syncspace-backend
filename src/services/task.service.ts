@@ -139,13 +139,9 @@ export const updateTask = async (
   }
 
   const isOwner = space.ownerId.toString() === userId.toString();
-  const isMember = await SpaceMember.findOne({
-    spaceId: space._id,
-    userId,
-    status: "ACTIVE",
-  });
-  if (!isOwner && !isMember) {
-    throw new AppError("Access denied: You are not a member of this space", 403);
+  const isTaskCreator = task.createdBy.toString()===userId.toString();
+  if (!isOwner && !isTaskCreator) {
+    throw new AppError("Access denied: You are neither a space owner not task creator", 403);
   }
 
   const oldStatus = task.progressStatus;
@@ -175,10 +171,15 @@ export const updateTask = async (
       if (space.ownerId.toString() !== userId.toString()) {
         recipientIds.add(space.ownerId.toString());
       }
+      for(const assignee of task.assignees){
+        if(assignee.userId.toString()!==userId.toString()){
+          recipientIds.add(assignee.userId.toString())
+        }
+      }
       if (recipientIds.size > 0) {
         await createNotification([...recipientIds], {
           message: `Task "${task.title}" was completed`,
-          type: "ASSIGNEE_TASK_COMPLETED",
+          type: "TASK_COMPLETED",
           resource: "TASK",
           resourceId: task._id,
           senderId: userId,
@@ -243,13 +244,9 @@ export const addAssignee = async (
 
   // Check actor membership
   const isActorOwner = space.ownerId.toString() === actorId.toString();
-  const isActorMember = await SpaceMember.findOne({
-    spaceId: space._id,
-    userId: actorId,
-    status: "ACTIVE",
-  });
-  if (!isActorOwner && !isActorMember) {
-    throw new AppError("Access denied: You are not a member of this space", 403);
+  const isActorTaskCreator = task.createdBy.toString()===actorId.toString()
+  if (!isActorOwner && !isActorTaskCreator) {
+    throw new AppError("Access denied: You are neither owner of this space nor task creator", 403);
   }
 
   // Check assignee membership
@@ -306,13 +303,9 @@ export const removeAssignee = async (
   }
 
   const isActorOwner = space.ownerId.toString() === actorId.toString();
-  const isActorMember = await SpaceMember.findOne({
-    spaceId: space._id,
-    userId: actorId,
-    status: "ACTIVE",
-  });
-  if (!isActorOwner && !isActorMember) {
-    throw new AppError("Access denied: You are not a member of this space", 403);
+  const isActorTaskCreator = actorId.toString()===task.createdBy.toString();
+  if (!isActorOwner && !isActorTaskCreator) {
+    throw new AppError("Access denied: You are neither a owner of this space nor task creator", 403);
   }
 
   const assigneeIndex = task.assignees.findIndex(

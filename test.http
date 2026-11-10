@@ -331,7 +331,28 @@ POST {{baseUrl}}/auth/refresh
 ### ==============================================================================
 
 ### 43. Public Space view (no auth needed)
-# Expect: 200 OK (safe fields + owner name + contributor stats)
+# Expect: 200 OK with memberCount and contributors list (when PUBLIC; empty array for UNLISTED; 404 for PRIVATE)
+# Response shape:
+# {
+#   "message": "Public space fetched successfully",
+#   "space": {
+#     "_id": "...",
+#     "name": "...",
+#     "description": "...",
+#     "kind": "...",
+#     "theme": { "preset": "...", "mode": "..." },
+#     "visibility": "PUBLIC",
+#     "joinPolicy": "OPEN",
+#     "status": "Active",
+#     "memberCount": 2,
+#     "createdAt": "...",
+#     "owner": { "_id": "...", "name": "..." },
+#     "contributorStats": { "totalContributors": 2, "totalTasks": 1, "completedTasks": 1 },
+#     "contributors": [
+#       { "userId": "...", "name": "...", "tasksCompleted": 1, "share": 100 }
+#     ]
+#   }
+# }
 GET {{baseUrl}}/spaces/public/{{spaceId}}
 
 ### 44. Alice logs back in
@@ -612,8 +633,34 @@ GET {{baseUrl}}/users/me
 ### 66. Get another user by ID (safe fields only: _id, name, createdAt - NO email)
 GET {{baseUrl}}/users/{{charlieUserId}}
 
-### 67. Get public user profile with contribution stats
-# Expect: 200 OK (name, joinedAt, PUBLIC spaces with role and stats)
+### 67. Get public user profile with contribution stats (no auth needed)
+# Expect: 200 OK (returns 404 for deactivated users; lists only PUBLIC spaces)
+# Response shape:
+# {
+#   "message": "User profile fetched successfully",
+#   "profile": {
+#     "name": "Charlie Outsider",
+#     "joinedAt": "2026-01-01T00:00:00.000Z",
+#     "totalTasksCompleted": 1,
+#     "publicSpacesCount": 1,
+#     "spaces": [
+#       {
+#         "_id": "space_123",
+#         "name": "SyncSpace Dev Team",
+#         "description": "Collaboration space for devs",
+#         "kind": "BUILDERS_CIRCLE",
+#         "theme": { "preset": "NEON_GRID", "mode": "dark" },
+#         "memberCount": 2,
+#         "joinedAt": "2026-01-02T00:00:00.000Z",
+#         "role": "MEMBER",
+#         "stats": {
+#           "tasksCompleted": 1,
+#           "contributionShare": 100
+#         }
+#       }
+#     ]
+#   }
+# }
 GET {{baseUrl}}/users/{{charlieUserId}}/profile
 
 ### ==============================================================================

@@ -23,8 +23,8 @@ export async function getUserById(userId: string) {
 }
 
 export async function getUserProfile(userId: string) {
-  const user = await User.findById(userId).select("_id name createdAt");
-  if (!user) {
+  const user = await User.findById(userId).select("_id name isDeleted createdAt").lean();
+  if (!user || user.isDeleted) {
     throw new AppError("User not found", 404);
   }
 
@@ -40,6 +40,7 @@ export async function getUserProfile(userId: string) {
     userId,
     status: "ACTIVE",
   }).lean();
+  const membershipMap = new Map(memberships.map((m) => [m.spaceId.toString(), m]));
   const memberSpaceIds = memberships.map((m) => m.spaceId);
 
   const memberSpaces = await Space.find({
@@ -49,10 +50,24 @@ export async function getUserProfile(userId: string) {
     status: "Active",
   }).lean();
 
+  const allPublicSpaces = [...ownedSpaces, ...memberSpaces];
+  const allSpaceIds = allPublicSpaces.map((s) => s._id);
+
+  const activeMemberCounts = await SpaceMember.aggregate([
+    { $match: { spaceId: { $in: allSpaceIds }, status: "ACTIVE" } },
+    { $group: { _id: "$spaceId", count: { $sum: 1 } } },
+  ]);
+  const memberCountMap = new Map<string, number>();
+  activeMemberCounts.forEach((c) => memberCountMap.set(c._id.toString(), c.count));
+
   const spacesList: Array<{
     _id: string;
     name: string;
-    description?: string;
+    description: string;
+    kind: string;
+    theme: unknown;
+    memberCount: number;
+    joinedAt: Date;
     role: "OWNER" | "MEMBER";
     stats: {
       tasksCompleted: number;
@@ -70,9 +85,10 @@ export async function getUserProfile(userId: string) {
     const userCompleted = await Task.countDocuments({
       spaceId: space._id,
       lifecycleStatus: "ACTIVE",
+      progressStatus: "COMPLETED",
       $or: [
-        { assignees: { $elemMatch: { userId, status: "DONE" } } },
-        { progressStatus: "COMPLETED", createdBy: userId },
+        { assignees: { $elemMatch: { userId, status: { $in: ["DONE", "COMPLETED"] } } } },
+        { createdBy: userId },
       ],
     });
 
@@ -84,7 +100,11 @@ export async function getUserProfile(userId: string) {
     spacesList.push({
       _id: space._id,
       name: space.name,
-      description: space.description,
+      description: space.description || "",
+      kind: space.kind,
+      theme: space.theme,
+      memberCount: (memberCountMap.get(space._id.toString()) || 0) + 1,
+      joinedAt: membershipMap.get(space._id.toString())?.joinedAt || space.createdAt,
       role: "OWNER",
       stats: {
         tasksCompleted: userCompleted,
@@ -103,7 +123,8 @@ export async function getUserProfile(userId: string) {
     const userCompleted = await Task.countDocuments({
       spaceId: space._id,
       lifecycleStatus: "ACTIVE",
-      assignees: { $elemMatch: { userId, status: "DONE" } },
+      progressStatus: "COMPLETED",
+      assignees: { $elemMatch: { userId, status: { $in: ["DONE", "COMPLETED"] } } },
     });
 
     const contributionShare =
@@ -114,7 +135,11 @@ export async function getUserProfile(userId: string) {
     spacesList.push({
       _id: space._id,
       name: space.name,
-      description: space.description,
+      description: space.description || "",
+      kind: space.kind,
+      theme: space.theme,
+      memberCount: (memberCountMap.get(space._id.toString()) || 0) + 1,
+      joinedAt: membershipMap.get(space._id.toString())?.joinedAt || space.createdAt,
       role: "MEMBER",
       stats: {
         tasksCompleted: userCompleted,
@@ -123,9 +148,17 @@ export async function getUserProfile(userId: string) {
     });
   }
 
+  const publicSpacesCount = spacesList.length;
+  const totalTasksCompleted = spacesList.reduce(
+    (sum, s) => sum + s.stats.tasksCompleted,
+    0,
+  );
+
   return {
     name: user.name,
     joinedAt: user.createdAt,
+    totalTasksCompleted,
+    publicSpacesCount,
     spaces: spacesList,
   };
 }

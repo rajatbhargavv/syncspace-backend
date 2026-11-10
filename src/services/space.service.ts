@@ -90,19 +90,89 @@ export const getPublicSpace = async (spaceId: string) => {
   }
 
   const owner = await User.findById(space.ownerId).select("name").lean();
-  const activeMemberCount = await SpaceMember.countDocuments({
-    spaceId,
-    status: "ACTIVE",
-  });
+  const activeMembers = await SpaceMember.find({ spaceId, status: "ACTIVE" })
+    .select("userId")
+    .lean();
+  const activeMemberCount = activeMembers.length;
+  const memberCount = activeMemberCount + 1;
+
   const totalTasks = await Task.countDocuments({
     spaceId,
     lifecycleStatus: "ACTIVE",
   });
-  const completedTasks = await Task.countDocuments({
+  const completedTasksCount = await Task.countDocuments({
     spaceId,
     lifecycleStatus: "ACTIVE",
     progressStatus: "COMPLETED",
   });
+
+  let contributors: Array<{
+    userId: string;
+    name: string;
+    tasksCompleted: number;
+    share: number;
+  }> = [];
+
+  if (space.visibility === "PUBLIC") {
+    const eligibleUserIds = new Set<string>();
+    eligibleUserIds.add(space.ownerId.toString());
+    activeMembers.forEach((m) => eligibleUserIds.add(m.userId.toString()));
+
+    const eligibleUsers = await User.find({
+      _id: { $in: Array.from(eligibleUserIds) },
+    })
+      .select("_id name")
+      .lean();
+
+    const userMap = new Map<string, string>();
+    eligibleUsers.forEach((u) =>
+      userMap.set(u._id.toString(), u.name || "Unknown"),
+    );
+
+    const completionMap = new Map<string, number>();
+    eligibleUserIds.forEach((uId) => completionMap.set(uId, 0));
+
+    const completedTasks = await Task.find({
+      spaceId,
+      lifecycleStatus: "ACTIVE",
+      progressStatus: "COMPLETED",
+    })
+      .select("assignees createdBy")
+      .lean();
+
+    for (const task of completedTasks) {
+      if (task.assignees && task.assignees.length > 0) {
+        const countedInTask = new Set<string>();
+        for (const assignee of task.assignees) {
+          const statusStr = (assignee.status || "").toString();
+          if (statusStr === "DONE" || statusStr === "COMPLETED") {
+            const aId = assignee.userId.toString();
+            if (eligibleUserIds.has(aId) && !countedInTask.has(aId)) {
+              countedInTask.add(aId);
+              completionMap.set(aId, (completionMap.get(aId) || 0) + 1);
+            }
+          }
+        }
+      }
+    }
+
+    const contributorList = Array.from(eligibleUserIds).map((userId) => {
+      const tasksCompleted = completionMap.get(userId) || 0;
+      const share =
+        completedTasksCount > 0
+          ? Math.round((tasksCompleted / completedTasksCount) * 100)
+          : 0;
+      return {
+        userId,
+        name: userMap.get(userId) || "Unknown",
+        tasksCompleted,
+        share,
+      };
+    });
+
+    contributorList.sort((a, b) => b.tasksCompleted - a.tasksCompleted);
+    contributors = contributorList.slice(0, 20);
+  }
 
   return {
     _id: space._id,
@@ -113,16 +183,18 @@ export const getPublicSpace = async (spaceId: string) => {
     visibility: space.visibility,
     joinPolicy: space.joinPolicy,
     status: space.status,
+    memberCount,
     createdAt: space.createdAt,
     owner: {
       _id: space.ownerId,
       name: owner?.name || "Unknown",
     },
     contributorStats: {
-      totalContributors: activeMemberCount + 1,
+      totalContributors: memberCount,
       totalTasks,
-      completedTasks,
+      completedTasks: completedTasksCount,
     },
+    contributors,
   };
 };
 

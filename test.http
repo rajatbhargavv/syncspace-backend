@@ -726,3 +726,43 @@ GET {{baseUrl}}/spaces/{{requestSpaceId}}/analytics?range=7d
 
 ### 76. Alice views 30-day analytics
 GET {{baseUrl}}/spaces/{{requestSpaceId}}/analytics?range=30d
+
+### =========================================================================
+### 11. WEB PUSH NOTIFICATIONS
+### =========================================================================
+
+### 77. Get VAPID Public Key (Public, no auth required)
+# Expect: 200 OK with { "publicKey": "..." } (or 503 if push not configured)
+GET {{baseUrl}}/push/public-key
+
+### 78. Subscribe to Web Push Notifications (Requires auth)
+# Expect: 201 Created with { "message": "Push subscription saved" }
+POST {{baseUrl}}/push/subscribe
+Content-Type: application/json
+
+{
+    "subscription": {
+        "endpoint": "https://fcm.googleapis.com/fcm/send/sample-subscription-endpoint-test-alice",
+        "expirationTime": null,
+        "keys": {
+            "p256dh": "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QT9AcUbVYO2-0U0waLF2CtQzGl7elanNgpttYsNuR_jjYVq4",
+            "auth": "tBHItJI5svbpCesaqNU6kg"
+        }
+    },
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+}
+
+### 79. Send Test Push Notification (Rate limited: max 1 per 30s per user)
+# Expect: 200 OK with { "sent": <number> }
+POST {{baseUrl}}/push/test
+Content-Type: application/json
+
+### 80. Unsubscribe from Web Push Notifications (Requires auth)
+# Expect: 200 OK with { "message": "Push subscription removed" }
+DELETE {{baseUrl}}/push/subscribe
+Content-Type: application/json
+
+{
+    "endpoint": "https://fcm.googleapis.com/fcm/send/sample-subscription-endpoint-test-alice"
+}
+

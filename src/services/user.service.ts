@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { Space } from "../models/Space.model.js";
 import { SpaceMember } from "../models/SpaceMember.model.js";
 import Task from "../models/Task.model.js";
+import { PushSubscription } from "../models/PushSubscription.model.js";
 
 export async function getCurrentUser(userId: string) {
   const exists = await User.findById(userId).select("_id name email plan createdAt");
@@ -194,6 +195,8 @@ export async function deleteUser(userId: string) {
       await Space.deleteOne({ _id: space._id });
     }
   }
+  // Delete all push subscriptions associated with this user
+  await PushSubscription.deleteMany({ userId });
   await User.updateOne({ _id: userId }, { isDeleted: true });
   return;
 }

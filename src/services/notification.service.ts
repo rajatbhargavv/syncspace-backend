@@ -2,6 +2,7 @@ import Notification from "../models/Notification.model.js";
 import User from "../models/User.model.js";
 import type { INotification } from "../types/notification.types.js";
 import { getIo } from "../websocket/socket.server.js";
+import { sendPushToUsers } from "./push.service.js";
 import AppError from "../utils/AppError.js";
 
 type NotificationData = Omit<
@@ -26,6 +27,7 @@ export async function createNotification(
     };
   });
   const savedNotifications = await Notification.insertMany(notificationObjects);
+
   try {
     const io = getIo();
     savedNotifications.forEach((not) => {
@@ -34,6 +36,17 @@ export async function createNotification(
   } catch {
     // Socket not initialized or error, ignore
   }
+
+  // Fire-and-forget Web Push: never blocks caller and never throws
+  try {
+    const sampleNotification = savedNotifications[0] || data;
+    sendPushToUsers(recipientIds, sampleNotification).catch((err) => {
+      console.warn("[Push] Background push dispatch failed:", err);
+    });
+  } catch (pushErr) {
+    console.warn("[Push] Failed to trigger push dispatch:", pushErr);
+  }
+
   return savedNotifications;
 }
 

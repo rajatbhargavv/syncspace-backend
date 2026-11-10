@@ -123,12 +123,18 @@ export async function sendPushToUsers(
     }
 
     if (targetUserIds.length === 0) {
+      console.log(
+        `[Push] Push suppressed for all recipients (${uniqueRecipients.join(", ")}): active socket visible in foreground.`
+      );
       return { sent: 0, failed: 0 };
     }
 
     // 2. Load push subscriptions for targets
     const subscriptions = await listForUsers(targetUserIds);
     if (!subscriptions || subscriptions.length === 0) {
+      console.log(
+        `[Push] No push subscriptions found in DB for targets: [${targetUserIds.join(", ")}]`
+      );
       return { sent: 0, failed: 0 };
     }
 

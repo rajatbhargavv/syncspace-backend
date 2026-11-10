@@ -282,6 +282,20 @@ export const addAssignee = async (
     meta: { assigneeId: assigneeUserId },
   });
 
+  if (assigneeUserId.toString() !== actorId.toString()) {
+    try {
+      await createNotification([assigneeUserId], {
+        message: `You were assigned to task "${task.title}"`,
+        type: "TASK_CREATED",
+        resource: "TASK",
+        resourceId: task._id,
+        senderId: actorId,
+      });
+    } catch (err) {
+      console.error("Failed to send task assignment notification:", err);
+    }
+  }
+
   emitTaskUpdated(task.spaceId, savedTask);
 
   return savedTask;

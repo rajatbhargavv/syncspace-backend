@@ -7,6 +7,10 @@ export function registerSocketHandlers(io: Server) {
     const userId = (socket as any).userId;
     console.log(`Socket connected: ${socket.id}, User: ${userId}`);
 
+    // Default presence visible to false until the client reports
+    socket.data = socket.data || {};
+    socket.data.visible = false;
+
     if (userId) {
       // 1. Join personal user room: user:${userId}
       socket.join(`user:${userId}`);
@@ -29,6 +33,13 @@ export function registerSocketHandlers(io: Server) {
         console.error(`Error joining space rooms for user ${userId}:`, err);
       }
     }
+
+    // Client presence reporting: emitted on connect and visibilitychange
+    socket.on("presence:update", (data: any) => {
+      if (data && typeof data.visible === "boolean") {
+        socket.data.visible = data.visible;
+      }
+    });
 
     socket.on("space:join", (spaceId: string) => {
       if (spaceId) {

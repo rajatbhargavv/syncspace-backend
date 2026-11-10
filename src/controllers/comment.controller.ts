@@ -1,8 +1,9 @@
-import { Request , Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import {
   createComment,
   deleteComment,
   getComments,
+  getTaskTimeline,
   updateComment,
 } from "../services/comment.service.js";
 import AppError from '../utils/AppError.js';
@@ -15,10 +16,12 @@ export async function handleCreateComment(req: Request, res: Response, next: Nex
         throw new AppError("TaskId is required", 400);
     }
     const content = req.body.content;
+    const mentionedIds=req.body.mentionedIds;
     const addData: ICreateComment = {
         userId,
         taskId,
-        content
+        content,
+        mentionedIds
     };
     const comment = await createComment(addData);
     return res.status(201).json({
@@ -52,12 +55,24 @@ export async function handleGetComments(req: Request, res: Response, next: NextF
     if (!taskId) {
         throw new AppError("TaskId is required", 400);
     }
-    // viewerUserId from authentication is used ONLY to verify the requester has permission to view this task's comments
     const viewerUserId = req.user!.id;
     const comments = await getComments(taskId, viewerUserId);
     return res.status(200).json({
         message: "comments fetched successfully",
         comments
+    });
+}
+
+export async function handleGetTaskTimeline(req: Request, res: Response, next: NextFunction){
+    const taskId = (req.params.id || req.params.taskId) as string;
+    if (!taskId) {
+        throw new AppError("TaskId is required", 400);
+    }
+    const userId = req.user!.id;
+    const timeline = await getTaskTimeline(taskId, userId);
+    return res.status(200).json({
+        message: "Timeline fetched successfully",
+        timeline
     });
 }
 

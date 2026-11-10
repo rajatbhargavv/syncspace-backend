@@ -1,51 +1,58 @@
-import { Router, RequestHandler } from "express";
+import { Router } from "express";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
   handleCreateSubtask,
-  handleDeleteSubtask,
-  handleGetSubtaskById,
   handleGetSubtasksByTaskId,
+  handleUpdateSubtask,
+  handleDeleteSubtask,
 } from "../controllers/subTask.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import validate from "../middleware/validation.middleware.js";
-import { subTaskValidator } from "../validators/subTask.validator.js";
+import {
+  createSubtaskValidator,
+  updateSubtaskValidator,
+} from "../validators/subTask.validator.js";
 
-const subTaskRouter = Router();
+const subTaskRouter = Router({ mergeParams: true });
 subTaskRouter.use(requireAuth);
 
-const copyTaskIdToBody: RequestHandler = (req, _res, next) => {
-  req.body = {
-    ...req.body,
-    taskId: req.params.taskId,
-  };
-  next();
-};
-
-// Create and list subtasks for a task.
+// POST /api/tasks/:taskId/subtasks
 subTaskRouter.post(
   "/tasks/:taskId/subtasks",
-  copyTaskIdToBody,
-  validate(subTaskValidator),
+  validate(createSubtaskValidator),
   asyncHandler(handleCreateSubtask)
 );
+
+// GET /api/tasks/:taskId/subtasks
 subTaskRouter.get(
   "/tasks/:taskId/subtasks",
   asyncHandler(handleGetSubtasksByTaskId)
 );
 
-// Also support creating a subtask with taskId in the request body.
-subTaskRouter.post(
-  "/subtasks",
-  validate(subTaskValidator),
-  asyncHandler(handleCreateSubtask)
+// PATCH /api/subtasks/:id
+subTaskRouter.patch(
+  "/subtasks/:id",
+  validate(updateSubtaskValidator),
+  asyncHandler(handleUpdateSubtask)
 );
-subTaskRouter.get(
-  "/subtasks/:subtaskId",
-  asyncHandler(handleGetSubtaskById)
-);
+
+// DELETE /api/subtasks/:id
 subTaskRouter.delete(
-  "/subtasks/:subtaskId",
+  "/subtasks/:id",
+  asyncHandler(handleDeleteSubtask)
+);
+
+// Direct routes when mounted on /api/subtasks
+subTaskRouter.patch(
+  "/:id",
+  validate(updateSubtaskValidator),
+  asyncHandler(handleUpdateSubtask)
+);
+
+subTaskRouter.delete(
+  "/:id",
   asyncHandler(handleDeleteSubtask)
 );
 
 export default subTaskRouter;
+

@@ -167,7 +167,7 @@ export async function sendPushToUsers(
           url: resolvedUrl,
           tag,
           unreadCount: unreadMap.get(sub.userId.toString()) || 0,
-          icon: "/favicon.svg",
+          icon: "/pwa-192x192.png",
         };
 
         const payloadString = JSON.stringify(payloadData);

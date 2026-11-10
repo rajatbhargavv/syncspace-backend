@@ -13,11 +13,11 @@ import validate from "../middleware/validation.middleware.js";
 import { createCommentSchema, updateCommentSchema } from "../validators/comment.validator.js";
 
 const commentRouter = Router({ mergeParams: true });
-commentRouter.use(requireAuth);
 
 // POST /api/tasks/:taskId/comments - Add a comment
 commentRouter.post(
   "/tasks/:taskId/comments",
+  requireAuth,
   validate(createCommentSchema),
   asyncHandler(handleCreateComment)
 );
@@ -25,18 +25,21 @@ commentRouter.post(
 // GET /api/tasks/:taskId/comments - List task comments
 commentRouter.get(
   "/tasks/:taskId/comments",
+  requireAuth,
   asyncHandler(handleGetComments)
 );
 
 // GET /api/tasks/:taskId/timeline - Task timeline
 commentRouter.get(
   "/tasks/:taskId/timeline",
+  requireAuth,
   asyncHandler(handleGetTaskTimeline)
 );
 
 // PATCH /api/comments/:commentId - Edit your comment
 commentRouter.patch(
   "/comments/:commentId",
+  requireAuth,
   requireCommentOwner,
   validate(updateCommentSchema),
   asyncHandler(handleUpdateComment)
@@ -45,6 +48,7 @@ commentRouter.patch(
 // DELETE /api/comments/:commentId - Delete your comment
 commentRouter.delete(
   "/comments/:commentId",
+  requireAuth,
   requireCommentOwner,
   asyncHandler(handleDeleteComment)
 );
@@ -52,6 +56,7 @@ commentRouter.delete(
 // Also handle when mounted directly on /api/comments
 commentRouter.patch(
   "/:commentId",
+  requireAuth,
   requireCommentOwner,
   validate(updateCommentSchema),
   asyncHandler(handleUpdateComment)
@@ -59,6 +64,7 @@ commentRouter.patch(
 
 commentRouter.delete(
   "/:commentId",
+  requireAuth,
   requireCommentOwner,
   asyncHandler(handleDeleteComment)
 );

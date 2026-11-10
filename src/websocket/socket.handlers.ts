@@ -1,6 +1,10 @@
 import type { Server, Socket } from "socket.io";
 import { Space } from "../models/Space.model.js";
 import { SpaceMember } from "../models/SpaceMember.model.js";
+import {
+  setUserSocketVisibility,
+  removeUserSocket,
+} from "../services/presence.service.js";
 
 export function registerSocketHandlers(io: Server) {
   io.on("connection", async (socket: Socket) => {
@@ -12,6 +16,9 @@ export function registerSocketHandlers(io: Server) {
     socket.data.visible = false;
 
     if (userId) {
+      // Set initial visibility
+      setUserSocketVisibility(userId, socket.id, true);
+
       // 1. Join personal user room: user:${userId}
       socket.join(`user:${userId}`);
 
@@ -32,6 +39,12 @@ export function registerSocketHandlers(io: Server) {
       } catch (err) {
         console.error(`Error joining space rooms for user ${userId}:`, err);
       }
+
+      socket.on("presence:update", (data: { visible?: boolean }) => {
+        if (typeof data?.visible === "boolean") {
+          setUserSocketVisibility(userId, socket.id, data.visible);
+        }
+      });
     }
 
     // Client presence reporting: emitted on connect and visibilitychange
@@ -55,6 +68,9 @@ export function registerSocketHandlers(io: Server) {
 
     socket.on("disconnect", (reason: any) => {
       console.log(`Socket disconnected: ${socket.id}, reason: ${reason}`);
+      if (userId) {
+        removeUserSocket(userId, socket.id);
+      }
     });
   });
 }

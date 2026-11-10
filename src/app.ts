@@ -20,6 +20,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/users", userRouter);
+app.use("/api/push", pushRouter);
 
 // spaces and space members
 app.use("/api/spaces", spaceRouter);
@@ -36,9 +37,8 @@ app.use("/api/subtasks", subTaskRouter);
 app.use("/api", commentRouter);
 app.use("/api/comments", commentRouter);
 
-// notifications and push
+// notifications
 app.use("/api/notifications", notificationRouter);
-app.use("/api/push", pushRouter);
 
 // Optional production static serving
 if (FRONTEND_DIST_PATH && fs.existsSync(FRONTEND_DIST_PATH)) {

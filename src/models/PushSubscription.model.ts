@@ -12,12 +12,10 @@ const pushSubscriptionSchema = new Schema<IPushSubscription>(
       type: String,
       ref: "User",
       required: true,
-      index: true,
     },
     endpoint: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     keys: {

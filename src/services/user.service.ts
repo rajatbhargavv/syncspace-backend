@@ -98,13 +98,15 @@ export async function getUserProfile(userId: string) {
         ? Math.round((userCompleted / totalCompletedInSpace) * 100)
         : 0;
 
+    const activeMemberCount = memberCountMap.get(space._id.toString()) || 0;
+    const ownerIsMember = membershipMap.has(space._id.toString());
     spacesList.push({
       _id: space._id,
       name: space.name,
       description: space.description || "",
       kind: space.kind,
       theme: space.theme,
-      memberCount: (memberCountMap.get(space._id.toString()) || 0) + 1,
+      memberCount: activeMemberCount + (ownerIsMember ? 0 : 1),
       joinedAt: membershipMap.get(space._id.toString())?.joinedAt || space.createdAt,
       role: "OWNER",
       stats: {
@@ -139,7 +141,7 @@ export async function getUserProfile(userId: string) {
       description: space.description || "",
       kind: space.kind,
       theme: space.theme,
-      memberCount: (memberCountMap.get(space._id.toString()) || 0) + 1,
+      memberCount: memberCountMap.get(space._id.toString()) || 0,
       joinedAt: membershipMap.get(space._id.toString())?.joinedAt || space.createdAt,
       role: "MEMBER",
       stats: {

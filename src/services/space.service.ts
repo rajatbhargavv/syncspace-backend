@@ -82,7 +82,7 @@ export const getSpaceById = async (userId: string, spaceId: string) => {
 
 export const getPublicSpace = async (spaceId: string) => {
   const space = await Space.findById(spaceId).lean();
-  if (!space || space.status === "Inactive") {
+  if (!space) {
     throw new AppError("Space not found", 404);
   }
   if (space.visibility === "PRIVATE") {
@@ -141,6 +141,7 @@ export const getPublicSpace = async (spaceId: string) => {
       .lean();
 
     for (const task of completedTasks) {
+      let attributed = false;
       if (task.assignees && task.assignees.length > 0) {
         const countedInTask = new Set<string>();
         for (const assignee of task.assignees) {
@@ -150,25 +151,34 @@ export const getPublicSpace = async (spaceId: string) => {
             if (eligibleUserIds.has(aId) && !countedInTask.has(aId)) {
               countedInTask.add(aId);
               completionMap.set(aId, (completionMap.get(aId) || 0) + 1);
+              attributed = true;
             }
           }
         }
       }
+      if (!attributed) {
+        const creatorId = task.createdBy.toString();
+        if (eligibleUserIds.has(creatorId)) {
+          completionMap.set(creatorId, (completionMap.get(creatorId) || 0) + 1);
+        }
+      }
     }
 
-    const contributorList = Array.from(eligibleUserIds).map((userId) => {
-      const tasksCompleted = completionMap.get(userId) || 0;
-      const share =
-        completedTasksCount > 0
-          ? Math.round((tasksCompleted / completedTasksCount) * 100)
-          : 0;
-      return {
-        userId,
-        name: userMap.get(userId) || "Unknown",
-        tasksCompleted,
-        share,
-      };
-    });
+    const contributorList = Array.from(eligibleUserIds)
+      .map((userId) => {
+        const tasksCompleted = completionMap.get(userId) || 0;
+        const share =
+          completedTasksCount > 0
+            ? Math.round((tasksCompleted / completedTasksCount) * 100)
+            : 0;
+        return {
+          userId,
+          name: userMap.get(userId) || "Unknown",
+          tasksCompleted,
+          share,
+        };
+      })
+      .filter((contributor) => contributor.tasksCompleted > 0);
 
     contributorList.sort((a, b) => b.tasksCompleted - a.tasksCompleted);
     contributors = contributorList.slice(0, 20);
@@ -190,7 +200,7 @@ export const getPublicSpace = async (spaceId: string) => {
       name: owner?.name || "Unknown",
     },
     contributorStats: {
-      totalContributors: memberCount,
+      totalContributors: contributors.length,
       totalTasks,
       completedTasks: completedTasksCount,
     },

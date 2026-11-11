@@ -332,6 +332,8 @@ POST {{baseUrl}}/auth/refresh
 
 ### 43. Public Space view (no auth needed)
 # Expect: 200 OK with memberCount and contributors list (when PUBLIC; empty array for UNLISTED; 404 for PRIVATE)
+# Inactive PUBLIC and UNLISTED spaces remain readable and include status "Inactive";
+# the frontend renders them read-only without a join action.
 # Response shape:
 # {
 #   "message": "Public space fetched successfully",
@@ -765,4 +767,3 @@ Content-Type: application/json
 {
     "endpoint": "https://fcm.googleapis.com/fcm/send/sample-subscription-endpoint-test-alice"
 }
-

@@ -6,6 +6,7 @@ export const createTaskSchema = Joi.object({
   description: Joi.string().trim().allow("").optional(),
   priority: Joi.string().valid("LOW", "MEDIUM", "HIGH", "URGENT").default("MEDIUM"),
   deadline: Joi.date().iso().required(),
+  assignees: Joi.array().items(Joi.string().trim().min(1)).default([]),
 });
 
 export const updateTaskSchema = Joi.object({

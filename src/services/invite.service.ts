@@ -12,7 +12,17 @@ export async function createSpaceInvite(data: ICreateInvite) {
     throw new AppError("Space not found or inactive", 404);
   }
   if (space.ownerId.toString() !== data.inviterId.toString()) {
-    throw new AppError("Only the space owner can create invite links", 403);
+    if (space.invitePermission !== "ALL_MEMBERS") {
+      throw new AppError("Only the space owner can create invite links", 403);
+    }
+    const member = await SpaceMember.findOne({
+      spaceId: data.spaceId,
+      userId: data.inviterId,
+      status: "ACTIVE",
+    });
+    if (!member) {
+      throw new AppError("Only active space members can create invite links", 403);
+    }
   }
 
   let expiresAt = data.expiresAt;

@@ -30,16 +30,30 @@ export async function joinSpace(spaceId: string, userId: string) {
     }
 
     if (policy === "REQUEST") {
+        let member;
         if (exists) {
             exists.status = "PENDING";
-            const updated = await exists.save();
-            return updated;
+            member = await exists.save();
+        } else {
+            member = await SpaceMember.create({
+                spaceId,
+                userId,
+                status: "PENDING",
+            });
         }
-        const member = await SpaceMember.create({
-            spaceId,
-            userId,
-            status: "PENDING",
-        });
+
+        try {
+            await createNotification([space.ownerId], {
+                message: `A new request to join your space "${space.name}" is waiting for approval`,
+                type: "SPACE_MEMBER_JOINED",
+                resource: "SPACE",
+                resourceId: spaceId,
+                senderId: userId,
+            });
+        } catch (err) {
+            console.error("Failed to notify space owner about join request:", err);
+        }
+
         return member;
     }
 

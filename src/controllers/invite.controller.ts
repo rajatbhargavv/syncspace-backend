@@ -16,7 +16,7 @@ export async function handleCreateSpaceInvite(req: Request, res: Response) {
     throw new AppError("Unauthorized", 401);
   }
 
-  const { expiresInHours, maxUses, expiresAt } = req.body;
+  const { expiresInHours, maxUses, expiresAt } = req.body ?? {};
   const result = await createSpaceInvite({
     spaceId,
     inviterId: userId,

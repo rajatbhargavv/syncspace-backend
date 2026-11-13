@@ -26,6 +26,12 @@ const spaceSchema = Joi.object({
     joinPolicy: Joi.string()
         .valid("INVITE_ONLY", "REQUEST", "OPEN")
         .optional(),
+    assigneePermission: Joi.string()
+        .valid("OWNER_ONLY", "OWNER_AND_CREATOR", "ALL_MEMBERS")
+        .optional(),
+    invitePermission: Joi.string()
+        .valid("OWNER_ONLY", "ALL_MEMBERS")
+        .optional(),
     spaceType: Joi.string()
         .valid("Personal", "Shared")
         .optional()
@@ -54,6 +60,15 @@ const updateSpaceSchema = Joi.object({
         .optional(),
     joinPolicy: Joi.string()
         .valid("INVITE_ONLY", "REQUEST", "OPEN")
+        .optional(),
+    assigneePermission: Joi.string()
+        .valid("OWNER_AND_CREATOR", "ALL_MEMBERS")
+        .messages({
+            "any.only": "Choose either owner and task creator or all active members for assignee permissions"
+        })
+        .optional(),
+    invitePermission: Joi.string()
+        .valid("OWNER_ONLY", "ALL_MEMBERS")
         .optional()
 });
 

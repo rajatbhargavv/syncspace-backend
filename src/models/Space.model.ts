@@ -58,6 +58,16 @@ const spaceSchema = new Schema<ISpace>(
             type: String,
             enum: ["INVITE_ONLY", "REQUEST", "OPEN"],
             default: "INVITE_ONLY"
+        },
+        assigneePermission: {
+            type: String,
+            enum: ["OWNER_AND_CREATOR", "ALL_MEMBERS"],
+            default: "OWNER_AND_CREATOR"
+        },
+        invitePermission: {
+            type: String,
+            enum: ["OWNER_ONLY", "ALL_MEMBERS"],
+            default: "OWNER_ONLY"
         }
     },
     {

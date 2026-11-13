@@ -3,11 +3,15 @@ import { Request, Response, NextFunction } from "express";
 import {
   createSpace,
   getMySpaces,
+  searchDiscoverableSpaces,
   getSpaceById,
   getPublicSpace,
   updateSpace,
   deactivateSpace,
   searchSpaceMembers,
+  distributeTasksEqually,
+  getDistributionUndoStatus,
+  undoTaskDistribution,
 } from "../services/space.service.js";
 
 import AppError from "../utils/AppError.js";
@@ -50,10 +54,73 @@ export async function handleGetMySpaces(
   if (!userId) {
     throw new AppError("UserId is required", 400);
   }
+
   const spaces = await getMySpaces(userId);
   res.status(200).json({
     message: "Spaces fetched successfully",
     spaces,
+  });
+}
+
+export async function handleSearchDiscoverableSpaces(req: Request, res: Response) {
+  const search = typeof req.query.search === "string" ? req.query.search : undefined;
+  const spaces = await searchDiscoverableSpaces(search);
+  return res.status(200).json({
+    message: "Discoverable spaces fetched successfully",
+    spaces,
+  });
+}
+
+export async function handleDistributeTasksEqually(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const spaceId = req.params.id as string;
+  const userId = req.user?.id;
+  if (!spaceId) {
+    throw new AppError("Space ID is required", 400);
+  }
+  if (!userId) {
+    throw new AppError("Unauthorized", 401);
+  }
+
+  const result = await distributeTasksEqually(spaceId, userId);
+  return res.status(200).json({
+    message: "Tasks distributed equally",
+    ...result,
+  });
+}
+
+export async function handleGetDistributionUndoStatus(
+  req: Request,
+  res: Response,
+) {
+  const spaceId = req.params.id as string;
+  if (!spaceId) {
+    throw new AppError("Space ID is required", 400);
+  }
+  const result = await getDistributionUndoStatus(spaceId);
+  return res.status(200).json(result);
+}
+
+export async function handleUndoTaskDistribution(
+  req: Request,
+  res: Response,
+) {
+  const spaceId = req.params.id as string;
+  const userId = req.user?.id;
+  if (!spaceId) {
+    throw new AppError("Space ID is required", 400);
+  }
+  if (!userId) {
+    throw new AppError("Unauthorized", 401);
+  }
+
+  const result = await undoTaskDistribution(spaceId, userId);
+  return res.status(200).json({
+    message: "Task distribution restored",
+    ...result,
   });
 }
 
@@ -140,6 +207,12 @@ export async function handleUpdateSpace(
   }
   if (req.body.joinPolicy !== undefined) {
     updateData.joinPolicy = req.body.joinPolicy;
+  }
+  if (req.body.assigneePermission !== undefined) {
+    updateData.assigneePermission = req.body.assigneePermission;
+  }
+  if (req.body.invitePermission !== undefined) {
+    updateData.invitePermission = req.body.invitePermission;
   }
 
   const space = await updateSpace(userId, spaceId, updateData);

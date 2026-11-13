@@ -3,6 +3,7 @@ export type ThemePreset = "HEARTH" | "NEON_GRID" | "IVORY_INK" | "ORBIT";
 export type ThemeMode = "light" | "dark";
 export type SpaceVisibility = "PRIVATE" | "UNLISTED" | "PUBLIC";
 export type SpaceJoinPolicy = "INVITE_ONLY" | "REQUEST" | "OPEN";
+export type SpacePermission = "OWNER_ONLY" | "OWNER_AND_CREATOR" | "ALL_MEMBERS";
 
 export interface ISpaceTheme {
     preset: ThemePreset;
@@ -20,6 +21,8 @@ export interface ISpace {
     theme: ISpaceTheme;
     visibility: SpaceVisibility;
     joinPolicy: SpaceJoinPolicy;
+    assigneePermission: SpacePermission;
+    invitePermission: SpacePermission;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -32,6 +35,8 @@ export interface ICreateSpace {
     theme?: Partial<ISpaceTheme>;
     visibility?: SpaceVisibility;
     joinPolicy?: SpaceJoinPolicy;
+    assigneePermission?: SpacePermission;
+    invitePermission?: SpacePermission;
     spaceType?: 'Personal' | 'Shared';
 }
 
@@ -43,4 +48,6 @@ export interface IUpdateSpace {
     theme?: Partial<ISpaceTheme>;
     visibility?: SpaceVisibility;
     joinPolicy?: SpaceJoinPolicy;
+    assigneePermission?: SpacePermission;
+    invitePermission?: SpacePermission;
 }

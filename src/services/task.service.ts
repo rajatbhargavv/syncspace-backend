@@ -243,10 +243,8 @@ export const addAssignee = async (
   }
 
   // Check actor membership
-  const isActorOwner = space.ownerId.toString() === actorId.toString();
-  const isActorTaskCreator = task.createdBy.toString()===actorId.toString()
-  if (!isActorOwner && !isActorTaskCreator) {
-    throw new AppError("Access denied: You are neither owner of this space nor task creator", 403);
+  if (!(await canChangeAssignees(space, task, actorId))) {
+    throw new AppError("You do not have permission to change task assignees", 403);
   }
 
   // Check assignee membership
@@ -316,10 +314,8 @@ export const removeAssignee = async (
     throw new AppError("Space not found or inactive", 404);
   }
 
-  const isActorOwner = space.ownerId.toString() === actorId.toString();
-  const isActorTaskCreator = actorId.toString()===task.createdBy.toString();
-  if (!isActorOwner && !isActorTaskCreator) {
-    throw new AppError("Access denied: You are neither a owner of this space nor task creator", 403);
+  if (!(await canChangeAssignees(space, task, actorId))) {
+    throw new AppError("You do not have permission to change task assignees", 403);
   }
 
   const assigneeIndex = task.assignees.findIndex(
@@ -399,3 +395,25 @@ export const updateMyAssigneeStatus = async (
 
   return savedTask;
 };
+
+async function canChangeAssignees(
+  space: { _id: string; ownerId: string; assigneePermission?: string },
+  task: { createdBy: string },
+  actorId: string,
+) {
+  if (space.ownerId.toString() === actorId.toString()) return true;
+  if (
+    (space.assigneePermission === undefined ||
+      space.assigneePermission === "OWNER_AND_CREATOR") &&
+    task.createdBy.toString() === actorId.toString()
+  ) {
+    return true;
+  }
+  if (space.assigneePermission !== "ALL_MEMBERS") return false;
+  const member = await SpaceMember.findOne({
+    spaceId: space._id,
+    userId: actorId,
+    status: "ACTIVE",
+  });
+  return Boolean(member);
+}

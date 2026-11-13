@@ -7,10 +7,14 @@ import {
     handleCreateSpace, 
     handleDeactivateSpace, 
     handleGetMySpaces, 
+    handleSearchDiscoverableSpaces,
     handleGetSpaceById, 
     handleGetPublicSpace,
     handleUpdateSpace, 
-    handleSearchSpaceMembers
+    handleSearchSpaceMembers,
+    handleDistributeTasksEqually,
+    handleGetDistributionUndoStatus,
+    handleUndoTaskDistribution,
 } from "../controllers/space.controller.js";
 import { handleGetSpaceTasks } from "../controllers/task.controller.js";
 import { handleGetSpaceAnalytics } from "../controllers/analytics.controller.js";
@@ -25,10 +29,16 @@ const spaceRouter = express.Router();
 
 // Public routes - no auth or membership needed
 spaceRouter.get("/public/:id", asyncHandler(handleGetPublicSpace));
+spaceRouter.get("/discover", asyncHandler(handleSearchDiscoverableSpaces));
 spaceRouter.get("/invite/:token/preview", asyncHandler(handleGetInvitePreview));
 
 // Making all protected space routes accessible only to logged in users
 spaceRouter.use(requireAuth);
+
+// Distribute active tasks evenly across all active space members (PRO owner only)
+spaceRouter.post("/:id/distribute-equally", requireSpaceOwner, asyncHandler(handleDistributeTasksEqually));
+spaceRouter.get("/:id/distribution-undo", requireSpaceOwner, asyncHandler(handleGetDistributionUndoStatus));
+spaceRouter.post("/:id/distribution-undo", requireSpaceOwner, asyncHandler(handleUndoTaskDistribution));
 
 // Join via invite token (auth required, activates membership regardless of joinPolicy)
 spaceRouter.post("/join/:token", asyncHandler(handleJoinSpaceByInvite));
@@ -41,7 +51,7 @@ spaceRouter.post("/", validate(spaceSchema), asyncHandler(handleCreateSpace));
 spaceRouter.get("/", asyncHandler(handleGetMySpaces));
 
 // Create invite link (owner only)
-spaceRouter.post("/:id/invites", requireSpaceOwner, asyncHandler(handleCreateSpaceInvite));
+spaceRouter.post("/:id/invites", requireSpaceMember, asyncHandler(handleCreateSpaceInvite));
 
 // 3. Get single space by space ID
 spaceRouter.get("/:id", requireSpaceMember, asyncHandler(handleGetSpaceById));

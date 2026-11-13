@@ -1,8 +1,11 @@
 import { Space } from "../models/Space.model.js";
 import { SpaceMember } from "../models/SpaceMember.model.js";
-import User from "../models/User.model.js";
+import ActivityEvent from "../models/ActivityEvent.model.js";
 import Task from "../models/Task.model.js";
+import User from "../models/User.model.js";
+import { logActivityEvent } from "./activityEvent.service.js";
 import { ICreateSpace, IUpdateSpace } from "../types/space.types.js";
+import { ITaskAssignee } from "../types/task.types.js";
 import AppError from "../utils/AppError.js";
 
 export const createSpace = async (data: ICreateSpace) => {
@@ -65,6 +68,38 @@ export const getMySpaces = async (userId: string) => {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
   return result;
+};
+
+export const searchDiscoverableSpaces = async (search?: string) => {
+  const query = search?.trim();
+  const filter: Record<string, unknown> = {
+    status: "Active",
+    visibility: "PUBLIC",
+    joinPolicy: { $in: ["REQUEST", "OPEN"] },
+  };
+  if (query) {
+    filter.$or = [
+      { name: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
+  }
+
+  const spaces = await Space.find(filter)
+    .select("_id name description kind theme visibility joinPolicy ownerId createdAt updatedAt")
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+  const ownerIds = spaces.map((space) => space.ownerId);
+  const owners = await User.find({ _id: { $in: ownerIds } }).select("name").lean();
+  const ownerNames = new Map(owners.map((owner) => [owner._id.toString(), owner.name]));
+
+  return spaces.map((space) => ({
+    ...space,
+    owner: {
+      _id: space.ownerId,
+      name: ownerNames.get(space.ownerId.toString()) || "Unknown",
+    },
+  }));
 };
 
 export const getSpaceById = async (userId: string, spaceId: string) => {
@@ -268,3 +303,162 @@ export const searchSpaceMembers = async (
     .lean();
   return users;
 };
+
+export const distributeTasksEqually = async (spaceId: string, actorId: string) => {
+  const space = await Space.findById(spaceId).lean();
+  if (!space || space.status === "Inactive") {
+    throw new AppError("Space not found or inactive", 404);
+  }
+
+  const owner = await User.findById(space.ownerId).select("plan").lean();
+  if (!owner || owner.plan !== "PRO") {
+    throw new AppError("Equal task distribution requires a PRO subscription", 402);
+  }
+
+  const activeMembers = await SpaceMember.find({
+    spaceId,
+    status: "ACTIVE",
+  })
+    .select("userId joinedAt")
+    .sort({ joinedAt: 1, _id: 1 })
+    .lean();
+  const memberIds = [
+    space.ownerId.toString(),
+    ...activeMembers.map((member) => member.userId.toString()),
+  ].filter((userId, index, ids) => ids.indexOf(userId) === index);
+
+  const activeTasks = await Task.find({
+    spaceId,
+    lifecycleStatus: "ACTIVE",
+    progressStatus: { $ne: "COMPLETED" },
+  })
+    .select("_id progressStatus assignees")
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
+
+  if (activeTasks.length > 0) {
+    await Task.bulkWrite(
+      activeTasks.map((task, index) => ({
+        updateOne: {
+          filter: { _id: task._id },
+          update: {
+            $set: {
+              assignees: [
+                {
+                  userId: memberIds[index % memberIds.length],
+                  status: task.progressStatus === "IN_PROGRESS" ? "IN_PROGRESS" : "TODO",
+                },
+              ],
+            },
+          },
+        },
+      })),
+    );
+  }
+
+  await logActivityEvent({
+    spaceId,
+    actorId,
+    type: "TASKS_DISTRIBUTED",
+    meta: {
+      taskCount: activeTasks.length,
+      memberCount: memberIds.length,
+      previousAssignments: activeTasks.map((task) => ({
+        taskId: task._id,
+        assignees: task.assignees,
+      })),
+    },
+  });
+
+  return { updatedCount: activeTasks.length };
+};
+
+export const getDistributionUndoStatus = async (spaceId: string) => {
+  const event = await ActivityEvent.findOne({
+    spaceId,
+    type: "TASKS_DISTRIBUTED",
+    "meta.undone": { $ne: true },
+  })
+    .sort({ createdAt: -1 })
+    .select("_id")
+    .lean();
+
+  return { canUndo: Boolean(event) };
+};
+
+export const undoTaskDistribution = async (spaceId: string, actorId: string) => {
+  const space = await Space.findById(spaceId).lean();
+  if (!space || space.status === "Inactive") {
+    throw new AppError("Space not found or inactive", 404);
+  }
+
+  const owner = await User.findById(space.ownerId).select("plan").lean();
+  if (!owner || owner.plan !== "PRO") {
+    throw new AppError("Restoring task distribution requires a PRO subscription", 402);
+  }
+
+  const event = await ActivityEvent.findOne({
+    spaceId,
+    type: "TASKS_DISTRIBUTED",
+    "meta.undone": { $ne: true },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+  if (!event) {
+    throw new AppError("There is no task distribution to restore", 409);
+  }
+
+  const snapshots = Array.isArray(event.meta?.previousAssignments)
+    ? event.meta.previousAssignments
+    : [];
+  const updates = snapshots
+    .filter(isTaskAssignmentSnapshot)
+    .map((snapshot) => ({
+      updateOne: {
+        filter: { _id: snapshot.taskId, spaceId, lifecycleStatus: "ACTIVE" as const },
+        update: { $set: { assignees: snapshot.assignees } },
+      },
+    }));
+
+  if (updates.length > 0) {
+    await Task.bulkWrite(updates);
+  }
+
+  await ActivityEvent.updateOne(
+    { _id: event._id },
+    { $set: { "meta.undone": true } },
+  );
+  await logActivityEvent({
+    spaceId,
+    actorId,
+    type: "TASKS_DISTRIBUTION_UNDONE",
+    meta: { restoredCount: updates.length },
+  });
+
+  return { restoredCount: updates.length };
+};
+
+function isTaskAssignmentSnapshot(
+  snapshot: unknown,
+): snapshot is { taskId: string; assignees: ITaskAssignee[] } {
+  if (typeof snapshot !== "object" || snapshot === null || !("taskId" in snapshot)) {
+    return false;
+  }
+  if (!("assignees" in snapshot) || typeof snapshot.taskId !== "string") {
+    return false;
+  }
+  return (
+    Array.isArray(snapshot.assignees) &&
+    snapshot.assignees.every(
+      (assignee) =>
+        typeof assignee === "object" &&
+        assignee !== null &&
+        "userId" in assignee &&
+        typeof assignee.userId === "string" &&
+        "status" in assignee &&
+        (assignee.status === "TODO" ||
+          assignee.status === "IN_PROGRESS" ||
+          assignee.status === "DONE"),
+    )
+  );
+}

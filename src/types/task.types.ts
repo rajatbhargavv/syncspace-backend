@@ -25,6 +25,7 @@ export interface ITask {
 
   title: string;
   description?: string;
+  tags?: string[];
 
   priority: TaskPriority;
   deadline: Date;
@@ -43,13 +44,16 @@ export interface ICreateTask {
   createdBy: string;
   title: string;
   description?: string;
+  tags?: string[];
   priority?: TaskPriority;
   deadline: Date;
+  progressStatus?: TaskProgressStatus;
 }
 
 export interface IUpdateTask {
   title?: string;
   description?: string;
+  tags?: string[];
   priority?: TaskPriority;
   deadline?: Date;
   progressStatus?: TaskProgressStatus;

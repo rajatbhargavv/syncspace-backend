@@ -31,11 +31,12 @@ export async function handleGetSpaceTasks(req: Request, res: Response, next: Nex
   if (!spaceId) {
     throw new AppError("Space ID is required", 400);
   }
-  const { status, assignee, priority } = req.query;
+  const { status, assignee, priority, tag } = req.query;
   const tasks = await getSpaceTasks(spaceId, {
     status: status as string | undefined,
     assignee: assignee as string | undefined,
     priority: priority as string | undefined,
+    tag: tag as string | undefined,
   });
   return res.status(200).json({
     message: "Tasks fetched successfully",

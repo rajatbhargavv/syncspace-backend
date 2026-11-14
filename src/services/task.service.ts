@@ -27,9 +27,10 @@ export const createTask = async (data: ICreateTask): Promise<ITask> => {
     createdBy: data.createdBy,
     title: data.title,
     description: data.description,
+    tags: data.tags || [],
     priority: data.priority || "MEDIUM",
     deadline: data.deadline,
-    progressStatus: "TODO",
+    progressStatus: data.progressStatus || "TODO",
     lifecycleStatus: "ACTIVE",
     assignees: [],
   });
@@ -78,7 +79,7 @@ export const createTask = async (data: ICreateTask): Promise<ITask> => {
 
 export const getSpaceTasks = async (
   spaceId: string,
-  filters: { status?: string; assignee?: string; priority?: string }
+  filters: { status?: string; assignee?: string; priority?: string; tag?: string }
 ): Promise<ITask[]> => {
   const query: any = {
     spaceId,
@@ -93,6 +94,9 @@ export const getSpaceTasks = async (
   }
   if (filters.priority) {
     query.priority = filters.priority;
+  }
+  if (filters.tag) {
+    query.tags = filters.tag;
   }
 
   return await Task.find(query).sort({ createdAt: -1 });
@@ -148,6 +152,7 @@ export const updateTask = async (
 
   if (updateData.title !== undefined) task.title = updateData.title;
   if (updateData.description !== undefined) task.description = updateData.description;
+  if (updateData.tags !== undefined) task.tags = updateData.tags;
   if (updateData.priority !== undefined) task.priority = updateData.priority;
   if (updateData.deadline !== undefined) task.deadline = updateData.deadline;
   if (updateData.progressStatus !== undefined) task.progressStatus = updateData.progressStatus;

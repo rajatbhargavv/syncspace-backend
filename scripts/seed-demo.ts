@@ -193,6 +193,13 @@ async function seedDemo(): Promise<void> {
         createdBy: owner._id,
         title: `${taskTitles[(index + spaceIndex) % taskTitles.length]} ${index + 1}`,
         description: "A demo task with enough context to show how the workspace is used.",
+        tags: [
+          ["inventory module"],
+          ["auth module", "security"],
+          ["ui module", "design"],
+          ["billing module"],
+          [],
+        ][index % 5],
         priority: priority(index + spaceIndex),
         deadline: taskDate(index + spaceIndex),
         progressStatus: status,

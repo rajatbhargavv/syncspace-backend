@@ -31,6 +31,11 @@ const taskSchema = new Schema<ITask>(
       trim: true,
     },
 
+    tags: {
+      type: [String],
+      default: [],
+    },
+
     priority: {
       type: String,
       enum: ["LOW", "MEDIUM", "HIGH", "URGENT"],
@@ -79,6 +84,7 @@ const taskSchema = new Schema<ITask>(
 taskSchema.index({ spaceId: 1 });
 taskSchema.index({ createdBy: 1 });
 taskSchema.index({ "assignees.userId": 1 });
+taskSchema.index({ tags: 1 });
 
 // Useful for fetching a user's assigned tasks
 

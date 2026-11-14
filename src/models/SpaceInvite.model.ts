@@ -47,7 +47,6 @@ const spaceInviteSchema = new Schema<ISpaceInvite>(
   }
 );
 
-spaceInviteSchema.index({ token: 1 });
 spaceInviteSchema.index({ spaceId: 1 });
 
 export const SpaceInvite = model<ISpaceInvite>("SpaceInvite", spaceInviteSchema);

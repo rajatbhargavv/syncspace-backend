@@ -10,6 +10,7 @@ import {
   deactivateSpace,
   searchSpaceMembers,
   distributeTasksEqually,
+  distributeTasksByTags,
   getDistributionUndoStatus,
   undoTaskDistribution,
 } from "../services/space.service.js";
@@ -88,6 +89,26 @@ export async function handleDistributeTasksEqually(
   const result = await distributeTasksEqually(spaceId, userId);
   return res.status(200).json({
     message: "Tasks distributed equally",
+    ...result,
+  });
+}
+
+export async function handleDistributeTasksByTags(
+  req: Request,
+  res: Response,
+) {
+  const spaceId = req.params.id as string;
+  const userId = req.user?.id;
+  if (!spaceId) {
+    throw new AppError("Space ID is required", 400);
+  }
+  if (!userId) {
+    throw new AppError("Unauthorized", 401);
+  }
+  const mappings = req.body.mappings as Array<{ tag: string; userId: string }>;
+  const result = await distributeTasksByTags(spaceId, userId, mappings);
+  return res.status(200).json({
+    message: "Tasks distributed by tags successfully",
     ...result,
   });
 }

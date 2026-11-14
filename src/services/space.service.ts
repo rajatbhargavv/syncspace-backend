@@ -373,6 +373,103 @@ export const distributeTasksEqually = async (spaceId: string, actorId: string) =
   return { updatedCount: activeTasks.length };
 };
 
+export const distributeTasksByTags = async (
+  spaceId: string,
+  actorId: string,
+  mappings: Array<{ tag: string; userId: string }>,
+) => {
+  const space = await Space.findById(spaceId).lean();
+  if (!space || space.status === "Inactive") {
+    throw new AppError("Space not found or inactive", 404);
+  }
+
+  const owner = await User.findById(space.ownerId).select("plan").lean();
+  if (!owner || owner.plan !== "PRO") {
+    throw new AppError("Tag-based task distribution requires a PRO subscription", 402);
+  }
+
+  const activeMembers = await SpaceMember.find({
+    spaceId,
+    status: "ACTIVE",
+  })
+    .select("userId")
+    .lean();
+  const validMemberIds = new Set([
+    space.ownerId.toString(),
+    ...activeMembers.map((m) => m.userId.toString()),
+  ]);
+
+  for (const mapping of mappings) {
+    if (!validMemberIds.has(mapping.userId)) {
+      throw new AppError(`Target user ${mapping.userId} is not an active member of this space`, 400);
+    }
+  }
+
+  const activeTasks = await Task.find({
+    spaceId,
+    lifecycleStatus: "ACTIVE",
+    progressStatus: { $ne: "COMPLETED" },
+  })
+    .select("_id progressStatus assignees tags")
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
+
+  const updates: Array<{ taskId: string; userId: string; task: (typeof activeTasks)[0] }> = [];
+
+  for (const task of activeTasks) {
+    if (!task.tags || task.tags.length === 0) continue;
+    for (const mapping of mappings) {
+      const match = task.tags.some(
+        (t) => t.trim().toLowerCase() === mapping.tag.trim().toLowerCase(),
+      );
+      if (match) {
+        updates.push({
+          taskId: task._id,
+          userId: mapping.userId,
+          task,
+        });
+        break;
+      }
+    }
+  }
+
+  if (updates.length > 0) {
+    await Task.bulkWrite(
+      updates.map(({ taskId, userId, task }) => ({
+        updateOne: {
+          filter: { _id: taskId },
+          update: {
+            $set: {
+              assignees: [
+                {
+                  userId,
+                  status: task.progressStatus === "IN_PROGRESS" ? "IN_PROGRESS" : "TODO",
+                },
+              ],
+            },
+          },
+        },
+      })),
+    );
+  }
+
+  await logActivityEvent({
+    spaceId,
+    actorId,
+    type: "TASKS_DISTRIBUTED",
+    meta: {
+      mode: "BY_TAGS",
+      taskCount: updates.length,
+      previousAssignments: updates.map(({ task }) => ({
+        taskId: task._id,
+        assignees: task.assignees,
+      })),
+    },
+  });
+
+  return { updatedCount: updates.length, totalMatched: updates.length };
+};
+
 export const getDistributionUndoStatus = async (spaceId: string) => {
   const event = await ActivityEvent.findOne({
     spaceId,

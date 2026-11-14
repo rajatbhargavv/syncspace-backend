@@ -72,4 +72,16 @@ const updateSpaceSchema = Joi.object({
         .optional()
 });
 
+export const distributeByTagsSchema = Joi.object({
+    mappings: Joi.array()
+        .items(
+            Joi.object({
+                tag: Joi.string().trim().min(1).max(50).required(),
+                userId: Joi.string().trim().required(),
+            })
+        )
+        .min(1)
+        .required(),
+});
+
 export { spaceSchema, updateSpaceSchema };

@@ -2,7 +2,7 @@ import express from "express";
 import asyncHandler from "../utils/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import validate from "../middleware/validation.middleware.js";
-import { spaceSchema, updateSpaceSchema } from "../validators/space.validator.js";
+import { spaceSchema, updateSpaceSchema, distributeByTagsSchema } from "../validators/space.validator.js";
 import { 
     handleCreateSpace, 
     handleDeactivateSpace, 
@@ -13,6 +13,7 @@ import {
     handleUpdateSpace, 
     handleSearchSpaceMembers,
     handleDistributeTasksEqually,
+    handleDistributeTasksByTags,
     handleGetDistributionUndoStatus,
     handleUndoTaskDistribution,
 } from "../controllers/space.controller.js";
@@ -37,6 +38,7 @@ spaceRouter.use(requireAuth);
 
 // Distribute active tasks evenly across all active space members (PRO owner only)
 spaceRouter.post("/:id/distribute-equally", requireSpaceOwner, asyncHandler(handleDistributeTasksEqually));
+spaceRouter.post("/:id/distribute-by-tags", requireSpaceOwner, validate(distributeByTagsSchema), asyncHandler(handleDistributeTasksByTags));
 spaceRouter.get("/:id/distribution-undo", requireSpaceOwner, asyncHandler(handleGetDistributionUndoStatus));
 spaceRouter.post("/:id/distribution-undo", requireSpaceOwner, asyncHandler(handleUndoTaskDistribution));
 

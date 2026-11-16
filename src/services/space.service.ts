@@ -70,17 +70,31 @@ export const getMySpaces = async (userId: string) => {
   return result;
 };
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export const searchDiscoverableSpaces = async (search?: string) => {
   const query = search?.trim();
   const filter: Record<string, unknown> = {
     status: "Active",
-    visibility: "PUBLIC",
-    joinPolicy: { $in: ["REQUEST", "OPEN"] },
   };
-  if (query) {
+
+  if (!query) {
+    filter.visibility = "PUBLIC";
+    filter.joinPolicy = { $in: ["REQUEST", "OPEN"] };
+  } else {
+    const safe = escapeRegex(query);
+    const regex = { $regex: safe, $options: "i" };
     filter.$or = [
-      { name: { $regex: query, $options: "i" } },
-      { description: { $regex: query, $options: "i" } },
+      {
+        visibility: "PUBLIC",
+        $or: [{ _id: regex }, { name: regex }, { description: regex }],
+      },
+      {
+        visibility: "UNLISTED",
+        _id: regex,
+      },
     ];
   }
 

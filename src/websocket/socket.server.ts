@@ -22,7 +22,12 @@ function parseCookies(cookieHeader?: string): Record<string, string> {
 export function initializeSocket(httpServer: HttpServer) {
   const allowedOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(",").map((s) => s.trim())
-    : ["http://localhost:3000", "http://localhost:5173", "http://localhost:4173"];
+    : [
+        "https://syncspace-frontend-gamma.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:4173",
+      ];
 
   io = new Server(httpServer, {
     cors: {
@@ -30,6 +35,7 @@ export function initializeSocket(httpServer: HttpServer) {
         if (
           !origin ||
           allowedOrigins.includes(origin) ||
+          (typeof origin === "string" && origin.endsWith(".vercel.app")) ||
           process.env.NODE_ENV !== "production"
         ) {
           callback(null, true);

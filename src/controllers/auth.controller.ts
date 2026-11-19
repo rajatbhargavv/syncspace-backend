@@ -10,10 +10,12 @@ import { NextFunction, Request, Response } from "express";
 import { NODE_ENV, SECRET_KEY_REFRESH } from "../config/env.js";
 import Jwt from "jsonwebtoken";
 
+const isProduction = NODE_ENV === "production";
+
 const COOKIE_BASE_OPTIONS = {
   httpOnly: true,
-  sameSite: "strict" as const,
-  secure: NODE_ENV === "production",
+  sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
+  secure: isProduction,
 };
 
 export async function handleRegisterUser(req: Request, res: Response, next: NextFunction) {

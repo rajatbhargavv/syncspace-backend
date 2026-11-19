@@ -46,7 +46,6 @@ const corsOptions: cors.CorsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -98,7 +97,7 @@ if (FRONTEND_DIST_PATH && fs.existsSync(FRONTEND_DIST_PATH)) {
   );
 
   // SPA fallback for non-API / non-socket.io requests
-  app.get("*", (req, res, next) => {
+  app.get("{*splat}", (req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
       return next();
     }

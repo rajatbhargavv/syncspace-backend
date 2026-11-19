@@ -8,7 +8,7 @@ try{
 await connectDb()
 const httpServer=createServer(app);
 initializeSocket(httpServer)
-httpServer.listen(PORT,()=>{
+httpServer.listen(Number(PORT), "0.0.0.0", ()=>{
     console.log("Server Started")
 })
 }catch(err){

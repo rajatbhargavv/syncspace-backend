@@ -16,6 +16,7 @@ import errorHandler from "./middleware/error.middleware.js";
 import { FRONTEND_DIST_PATH } from "./config/env.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map((s) => s.trim())

@@ -10,13 +10,27 @@ import { NextFunction, Request, Response } from "express";
 import { NODE_ENV, SECRET_KEY_REFRESH } from "../config/env.js";
 import Jwt from "jsonwebtoken";
 
-const isProduction = NODE_ENV === "production";
+function getCookieBaseOptions(req: Request) {
+  const origin = req.headers.origin;
+  const isHttpsOrigin = Boolean(origin && origin.startsWith("https://"));
+  const isRender = Boolean(
+    process.env.RENDER === "true" ||
+    process.env.RENDER_SERVICE_ID ||
+    process.env.RENDER_EXTERNAL_URL
+  );
+  const isProd =
+    NODE_ENV === "production" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.NODE_ENV !== "development";
 
-const COOKIE_BASE_OPTIONS = {
-  httpOnly: true,
-  sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
-  secure: isProduction,
-};
+  const isCrossSite = isHttpsOrigin || isRender || isProd;
+
+  return {
+    httpOnly: true,
+    sameSite: (isCrossSite ? "none" : "lax") as "none" | "lax",
+    secure: isCrossSite,
+  };
+}
 
 export async function handleRegisterUser(req: Request, res: Response, next: NextFunction) {
   const user: IUser = req.body;
@@ -30,22 +44,23 @@ export async function handleRegisterUser(req: Request, res: Response, next: Next
 export async function handleUserLogin(req: Request, res: Response, next: NextFunction) {
   const user: ILogin = req.body;
   const { accessToken, refreshToken } = await userLogin(user);
+  const cookieBaseOptions = getCookieBaseOptions(req);
 
   // Short-lived access token cookie (15 mins)
   res.cookie("accessToken", accessToken, {
-    ...COOKIE_BASE_OPTIONS,
+    ...cookieBaseOptions,
     maxAge: 15 * 60 * 1000,
   });
 
   // Token cookie for backward compatibility
   res.cookie("token", accessToken, {
-    ...COOKIE_BASE_OPTIONS,
+    ...cookieBaseOptions,
     maxAge: 24 * 60 * 60 * 1000,
   });
 
   // Long-lived refresh token cookie (24 hours)
   res.cookie("refreshToken", refreshToken, {
-    ...COOKIE_BASE_OPTIONS,
+    ...cookieBaseOptions,
     maxAge: 24 * 60 * 60 * 1000,
   });
 
@@ -60,19 +75,20 @@ export async function handleRefreshToken(req: Request, res: Response, next: Next
   const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
   const { accessToken, refreshToken } = await refreshAccessToken(incomingRefreshToken);
+  const cookieBaseOptions = getCookieBaseOptions(req);
 
   res.cookie("accessToken", accessToken, {
-    ...COOKIE_BASE_OPTIONS,
+    ...cookieBaseOptions,
     maxAge: 15 * 60 * 1000,
   });
 
   res.cookie("token", accessToken, {
-    ...COOKIE_BASE_OPTIONS,
+    ...cookieBaseOptions,
     maxAge: 24 * 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", refreshToken, {
-    ...COOKIE_BASE_OPTIONS,
+    ...cookieBaseOptions,
     maxAge: 24 * 60 * 60 * 1000,
   });
 
@@ -99,9 +115,10 @@ export async function handleLogout(req: Request, res: Response, next: NextFuncti
     }
   }
 
-  res.clearCookie("accessToken", COOKIE_BASE_OPTIONS);
-  res.clearCookie("refreshToken", COOKIE_BASE_OPTIONS);
-  res.clearCookie("token", COOKIE_BASE_OPTIONS);
+  const cookieBaseOptions = getCookieBaseOptions(req);
+  res.clearCookie("accessToken", cookieBaseOptions);
+  res.clearCookie("refreshToken", cookieBaseOptions);
+  res.clearCookie("token", cookieBaseOptions);
 
   return res.status(200).json({
     message: "Logged out successfully",
